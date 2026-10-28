@@ -38,33 +38,1015 @@ footer{padding:24px max(16px,env(safe-area-inset-left,0px)) calc(24px + env(safe
 </style>
 </head>
 <body>
-<main>
-  <section class="intro">
-    <p class="eyebrow">Three historical graveyards of Kashmir</p>
-    <h1>An Ode to the Dead</h1>
-    <p id="credit"></p>
-  </section>
-  <ul class="sites" id="sites"></ul>
-  <p class="featured"><span class="tag on">Test record</span><a href="grave.html?site=imambargah-hassanabad&amp;zone=G&amp;grave=2">Grave 2, Zone G, Imambargah, Hassanabad: 3D scan, Sheet 61 and photograph</a></p>
-</main>
-<footer>© 2026 Saqlain Siddiqi. All rights reserved. Private, shared only with invited people.</footer>
+<title>An Ode to the Dead</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: the scan fills the screen edge to edge; all chrome floats above it on translucent glass —
+   large title top-left, a capsule toolbar bottom-centre, contextual bars at the top when a record is open. */
+:root{
+  --bg:#f5f5f7; --bg2:#e3e3e8;
+  --label:#1d1d1f; --label2:#6e6e73; --label3:#aeaeb2;
+  --glass:rgba(255,255,255,.72); --glass-strong:rgba(255,255,255,.9); --hair:rgba(0,0,0,.08); --fill:rgba(118,118,128,.12); --fill2:rgba(118,118,128,.2);
+  --tint:#0071e3; --tint-ink:#ffffff; --mark:#ff9500; --danger:#ff3b30;
+  --shadow:0 10px 40px -8px rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.06);
+  --f-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif;
+  --f-text:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;
+  --ease:cubic-bezier(.32,.72,0,1);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1c1c1e; --bg2:#000000; --label:#f5f5f7; --label2:#98989d; --label3:#636366;
+  --glass:rgba(36,36,38,.7); --glass-strong:rgba(44,44,46,.92); --hair:rgba(255,255,255,.1); --fill:rgba(118,118,128,.24); --fill2:rgba(118,118,128,.36);
+  --tint:#0a84ff; --tint-ink:#ffffff; --mark:#ff9f0a; --danger:#ff453a;
+  --shadow:0 10px 40px -8px rgba(0,0,0,.6),0 2px 6px rgba(0,0,0,.3); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1c1c1e; --bg2:#000000; --label:#f5f5f7; --label2:#98989d; --label3:#636366;
+  --glass:rgba(36,36,38,.7); --glass-strong:rgba(44,44,46,.92); --hair:rgba(255,255,255,.1); --fill:rgba(118,118,128,.24); --fill2:rgba(118,118,128,.36);
+  --tint:#0a84ff; --tint-ink:#ffffff; --mark:#ff9f0a; --danger:#ff453a;
+  --shadow:0 10px 40px -8px rgba(0,0,0,.6),0 2px 6px rgba(0,0,0,.3); color-scheme:dark}
 
-<script src="assets/archive.js"></script>
+html,body{height:100%}
+body{background:var(--bg);color:var(--label);font-family:var(--f-text);font-size:15px;line-height:1.4;letter-spacing:-.01em;
+  overflow:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+button,input,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+button{-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--tint) 55%,transparent);outline-offset:2px}
+.app{position:relative;height:100%}
+
+/* translucent material */
+.glass{background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);
+  border:.5px solid var(--hair);box-shadow:var(--shadow)}
+
+/* stage fills the screen */
+.stage{position:absolute;inset:0;isolation:isolate;overflow:hidden;
+  background:radial-gradient(ellipse 90% 75% at 50% 55%, var(--bg) 0%, var(--bg2) 100%)}
+#view{position:relative;z-index:2;display:block;width:100%;height:100%;touch-action:none}
+.stage.drag::after{content:"Drop the .obj with its .mtl and textures, or a .glb";position:absolute;inset:16px;z-index:9;border:2px dashed var(--tint);
+  border-radius:24px;display:grid;place-items:center;font-weight:600;color:var(--tint);background:color-mix(in srgb,var(--bg) 82%,transparent)}
+
+/* large title, floating */
+.titlebar{position:absolute;z-index:5;top:calc(20px + env(safe-area-inset-top,0px));left:max(24px,env(safe-area-inset-left,0px));right:max(24px,env(safe-area-inset-right,0px));
+  pointer-events:none;transition:opacity .4s var(--ease),transform .4s var(--ease)}
+.titlebar h1{font-family:var(--f-display);font-weight:700;font-size:34px;line-height:1.1;letter-spacing:-.025em;margin:0;text-wrap:balance}
+.titlebar p{margin:4px 0 0;font-size:15px;color:var(--label2);letter-spacing:-.01em}
+body.recordopen .titlebar,body.touring .titlebar{opacity:0;transform:translateY(-8px)}
+
+/* toolbar: a capsule of glass, bottom centre */
+.toolbar{position:absolute;z-index:6;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+  display:flex;align-items:center;gap:4px;padding:6px;border-radius:999px;max-width:calc(100% - 32px);
+  transition:opacity .35s var(--ease),transform .35s var(--ease)}
+body.recordopen .toolbar,body.touring .toolbar{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(16px)}
+.tb{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:44px;min-width:44px;padding:0 14px;border:0;border-radius:999px;
+  background:transparent;color:var(--label);font-size:15px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .2s,transform .15s var(--ease)}
+.tb:hover{background:var(--fill)}
+.tb:active{transform:scale(.96);background:var(--fill2)}
+.tb svg{width:20px;height:20px;flex:none}
+.tb.icon{padding:0;width:44px}
+.tb.primary{background:var(--tint);color:var(--tint-ink);font-weight:600;padding:0 20px}
+.tb.primary:hover{background:color-mix(in srgb,var(--tint) 88%,#000)}
+.tsep{width:1px;height:24px;background:var(--hair);margin:0 4px}
+
+/* hidden sheet → canvas → scrim → sheet in front */
+.scrim{position:absolute;inset:0;z-index:3;background:color-mix(in srgb,var(--bg2) 55%,transparent);
+  -webkit-backdrop-filter:blur(14px) saturate(120%);backdrop-filter:blur(14px) saturate(120%);opacity:0;pointer-events:none;transition:opacity .5s var(--ease)}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;top:0;z-index:1;transform-origin:50% 50%;will-change:transform;background:#fff;border-radius:3px;
+  box-shadow:0 1px 3px rgba(0,0,0,.12),0 30px 80px -20px rgba(0,0,0,.45)}
+.sheet.front{z-index:4}
+.sheet img{display:block;width:100%;height:100%;object-fit:contain;border-radius:3px;user-select:none;-webkit-user-drag:none}
+
+/* record pin: a map-style callout over the grave */
+.pin{position:absolute;left:0;top:0;z-index:3;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;border:0;background:none;padding:0}
+.pin .callout{display:flex;flex-direction:column;align-items:flex-start;padding:7px 14px 8px;border-radius:14px;text-align:left}
+.pin .callout b{font-size:13px;font-weight:600;letter-spacing:-.01em;white-space:nowrap}
+.pin .callout small{font-size:12px;color:var(--label2);white-space:nowrap}
+.pin i{width:12px;height:12px;border-radius:50%;background:var(--mark);border:2px solid #fff;box-shadow:0 0 0 0 color-mix(in srgb,var(--mark) 45%,transparent),0 1px 4px rgba(0,0,0,.3);animation:pulse 2.2s var(--ease) infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--mark) 45%,transparent),0 1px 4px rgba(0,0,0,.3)}70%,100%{box-shadow:0 0 0 12px color-mix(in srgb,var(--mark) 0%,transparent),0 1px 4px rgba(0,0,0,.3)}}
+
+/* photographs: a dot where each was taken */
+.pdot{position:absolute;left:0;top:0;z-index:3;width:44px;height:44px;margin:-22px 0 0 -22px;border:0;padding:0;background:none;cursor:pointer;display:grid;place-items:center}
+.pdot i{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--mark);border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);transition:transform .2s var(--ease)}
+.pdot i svg{width:13px;height:13px;color:#fff}
+.pdot:hover i,.pdot:focus-visible i{transform:scale(1.15)}
+.pdot span{position:absolute;left:50%;bottom:calc(100% - 2px);transform:translate(-50%,4px);white-space:nowrap;font-size:13px;font-weight:500;
+  padding:6px 12px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s var(--ease)}
+.pdot:hover span,.pdot:focus-visible span{opacity:1;transform:translate(-50%,0)}
+.photo{position:absolute;inset:0;z-index:4;opacity:0;transition:opacity .8s var(--ease);cursor:zoom-out;touch-action:none}
+.photo.on{opacity:1}
+.photo.peekscan{opacity:0;transition:opacity .25s}
+.photo img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:contain;display:block;user-select:none;-webkit-user-drag:none}
+.photo.align{opacity:.55;pointer-events:none;transition:none}
+
+/* contextual bar at the top (record open, photo open, aligning) */
+.openbar{position:absolute;z-index:6;top:calc(16px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;justify-content:space-between;align-items:center;gap:8px;pointer-events:none}
+.openbar button{pointer-events:auto;display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 16px 0 12px;border-radius:999px;
+  border:.5px solid var(--hair);background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);
+  box-shadow:var(--shadow);color:var(--tint);cursor:pointer;font-size:15px;font-weight:500;transition:transform .15s var(--ease)}
+.openbar button:active{transform:scale(.96)}
+.openbar button.fill{background:var(--tint);color:var(--tint-ink);border-color:transparent;padding:0 18px}
+.openbar button svg{width:18px;height:18px}
+.obmid{font-size:13px;font-weight:500;color:var(--label);padding:9px 16px;border-radius:999px;pointer-events:none;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+@media (max-width:640px){.obmid{display:none}}
+
+/* small floating messages */
+.capsule{position:absolute;z-index:5;left:50%;transform:translateX(-50%);font-size:13px;font-weight:500;padding:9px 16px;border-radius:999px;
+  white-space:nowrap;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.hintbar{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+.status{top:calc(24px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:10px;font-variant-numeric:tabular-nums}
+.status::before{content:"";width:14px;height:14px;border-radius:50%;border:2px solid var(--fill2);border-top-color:var(--label2);animation:spin .9s linear infinite}
+.status.err{color:var(--danger)}
+.status.err::before{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* guided tour: a glass card */
+.tourcard{position:absolute;z-index:6;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  width:min(400px,calc(100% - 32px));border-radius:24px;padding:18px 20px 16px;display:flex;flex-direction:column;gap:10px}
+.tc-segs{display:flex;gap:4px}
+.tc-segs span{flex:1;height:3px;background:var(--fill2);border-radius:2px;overflow:hidden}
+.tc-segs i{display:block;height:100%;width:0;background:var(--label)}
+.tc-top{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:500;color:var(--label2)}
+.tc-time{font-variant-numeric:tabular-nums}
+.tourcard h3{font-family:var(--f-display);font-weight:700;font-size:22px;line-height:1.15;letter-spacing:-.02em;margin:0;text-wrap:balance}
+.tourcard p{margin:0;font-size:15px;line-height:1.45;color:var(--label);opacity:.85}
+.tc-ctl{display:flex;align-items:center;gap:8px;margin-top:6px}
+.tc-ctl button{display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:var(--fill);color:var(--label);cursor:pointer;transition:transform .15s var(--ease),background .2s}
+.tc-ctl button:hover:not(:disabled){background:var(--fill2)}
+.tc-ctl button:active:not(:disabled){transform:scale(.94)}
+.tc-ctl button:disabled{opacity:.3;cursor:default}
+.tc-ctl #tcPlay{background:var(--label);color:var(--bg)}
+.tc-ctl .exit{width:auto;padding:0 18px;margin-left:auto;border-radius:999px;background:transparent;color:var(--tint);font-weight:600;font-size:15px}
+.tc-ctl .exit:hover{background:var(--fill)}
+.tourcard.compact{width:auto;padding:12px 14px}
+.tourcard.compact p,.tourcard.compact .tc-segs,.tourcard.compact .tc-top{display:none}
+.tourcard.compact h3{font-size:17px}
+
+/* sheets (dialog) */
+dialog{border:0;border-radius:20px;background:var(--glass-strong);-webkit-backdrop-filter:saturate(180%) blur(30px);backdrop-filter:saturate(180%) blur(30px);
+  color:var(--label);padding:0;width:min(520px,calc(100% - 32px));max-height:calc(100% - 32px);box-shadow:0 30px 90px -20px rgba(0,0,0,.5)}
+dialog::backdrop{background:rgba(0,0,0,.32)}
+.dlg{display:flex;flex-direction:column;max-height:calc(100vh - 40px)}
+.dlg header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:14px 16px;border-bottom:.5px solid var(--hair)}
+.dlg header h3{grid-column:2;font-size:17px;font-weight:600;margin:0;letter-spacing:-.02em;white-space:nowrap}
+.dlg header .navl{justify-self:start}
+.dlg header .navr{justify-self:end}
+.navbtn{border:0;background:none;color:var(--tint);font-size:17px;padding:6px 4px;cursor:pointer;letter-spacing:-.02em}
+.navbtn.strong{font-weight:600}
+.form{padding:20px 16px 8px;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.group{background:var(--fill);border-radius:12px;overflow:hidden}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;min-height:44px}
+.row+.row{border-top:.5px solid var(--hair)}
+.row .rl{display:flex;flex-direction:column;min-width:0}
+.row .rl b{font-weight:400;font-size:17px;letter-spacing:-.02em}
+.row .rl small{font-size:13px;color:var(--label2)}
+.row .rv{font-size:15px;color:var(--label2);max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick{position:relative;color:var(--tint);font-size:17px;cursor:pointer;white-space:nowrap}
+.pick input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.footnote{font-size:13px;color:var(--label2);padding:6px 16px 16px;margin:0}
+.toast{position:fixed;z-index:30;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+  font-size:15px;font-weight:500;padding:12px 20px;border-radius:999px;max-width:calc(100% - 32px);text-align:center}
+.units{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* ---------- graveyard overview (home) ---------- */
+.overview{position:absolute;inset:0;z-index:20;display:flex;background:var(--bg);transition:opacity .45s var(--ease),transform .45s var(--ease)}
+.overview.away{opacity:0;transform:scale(1.03);pointer-events:none}
+.ov-side{position:relative;z-index:2;flex:none;width:380px;display:flex;flex-direction:column;margin:16px 0 16px max(16px,env(safe-area-inset-left,0px));
+  border-radius:24px;overflow:hidden}
+.ov-head{padding:28px 24px 16px}
+.ov-head h1{font-family:var(--f-display);font-weight:700;font-size:34px;line-height:1.1;letter-spacing:-.025em;margin:0;text-wrap:balance}
+.ov-head p{margin:6px 0 0;color:var(--label2);font-size:15px}
+.ov-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0 0}
+.ov-stats div{background:var(--fill);border-radius:14px;padding:10px 12px}
+.ov-stats b{display:block;font-family:var(--f-display);font-size:24px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.ov-stats span{font-size:12px;color:var(--label2)}
+.ov-list{flex:1;min-height:0;overflow-y:auto;padding:4px 12px 16px}
+.ov-cap{font-size:13px;font-weight:600;color:var(--label2);text-transform:uppercase;letter-spacing:.02em;padding:10px 12px 6px;margin:0}
+.zone{border-radius:14px;transition:background .2s}
+.zone.sel{background:var(--fill)}
+.zone>button{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;padding:10px 12px;cursor:pointer;text-align:left;border-radius:14px}
+.zone>button:hover{background:var(--fill)}
+.zbadge{flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--label);color:var(--bg);font-weight:700;font-size:16px}
+.zone.has .zbadge{background:var(--mark);color:#fff}
+.ztext{flex:1;min-width:0;display:flex;flex-direction:column}
+.ztext b{font-size:17px;font-weight:600;letter-spacing:-.02em}
+.ztext small{font-size:13px;color:var(--label2)}
+.chev{flex:none;width:16px;height:16px;color:var(--label3);transition:transform .25s var(--ease)}
+.zone.sel .chev{transform:rotate(90deg)}
+.zgraves{display:none;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px;padding:4px 12px 14px 60px}
+.zone.sel .zgraves{display:grid}
+.gchip{height:44px;border-radius:12px;border:0;background:var(--bg);color:var(--label2);font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;cursor:default;position:relative}
+.gchip.rec{background:var(--tint);color:var(--tint-ink);cursor:pointer;box-shadow:0 2px 8px color-mix(in srgb,var(--tint) 40%,transparent)}
+.gchip.rec:active{transform:scale(.95)}
+.gchip.rec::after{content:"3D";position:absolute;top:3px;right:5px;font-size:8px;font-weight:700;letter-spacing:.02em;opacity:.85}
+.zflag{margin:0 12px 12px 60px;font-size:12.5px;color:var(--label2);background:color-mix(in srgb,var(--mark) 14%,transparent);border-radius:10px;padding:8px 10px;display:none}
+.zone.sel .zflag{display:block}
+.ov-note{font-size:12.5px;color:var(--label2);padding:8px 24px 18px;margin:0}
+.ov-plan{position:relative;flex:1;min-width:0}
+.ov-plan svg{position:absolute;inset:0;width:100%;height:100%}
+.ov-plan .grid{stroke:var(--hair);stroke-width:1}
+.zpin{cursor:pointer}
+.zpin circle.halo{fill:color-mix(in srgb,var(--label) 10%,transparent);transition:r .3s var(--ease)}
+.zpin circle.core{fill:var(--label);stroke:var(--bg);stroke-width:3}
+.zpin.has circle.core{fill:var(--mark);stroke:#fff}
+.zpin text{fill:var(--bg);font:700 15px var(--f-display);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.zpin.has text{fill:#fff}
+.zpin text.zl{fill:var(--label2);font:500 12px var(--f-text)}
+.zpin.sel circle.halo{fill:color-mix(in srgb,var(--tint) 22%,transparent)}
+.zpin.sel circle.core{stroke:var(--tint);stroke-width:3}
+.zpin.unsure circle.core{stroke-dasharray:4 3}
+.ov-legend{position:absolute;right:max(20px,env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:14px;
+  padding:10px 14px;border-radius:14px;font-size:12px;color:var(--label2)}
+.ov-legend svg{position:static;width:auto;height:auto}
+.backnav{pointer-events:auto;display:inline-flex;align-items:center;gap:2px;border:0;background:none;color:var(--tint);font-size:17px;padding:0 0 6px;margin-left:-6px;cursor:pointer;letter-spacing:-.02em}
+.backnav svg{width:22px;height:22px}
+
+@media (max-width:640px){
+  .titlebar h1{font-size:28px}
+  .titlebar p{font-size:14px}
+  .tb .lbl{display:none}
+  .tb.primary .lbl{display:inline}
+  .tourcard{left:8px;right:8px;width:auto;bottom:calc(8px + env(safe-area-inset-bottom,0px));border-radius:28px}
+  .overview{flex-direction:column-reverse}
+  .ov-side{width:auto;margin:0 8px calc(8px + env(safe-area-inset-bottom,0px));max-height:58%;border-radius:28px}
+  .ov-head{padding:20px 20px 10px}
+  .ov-head h1{font-size:28px}
+  .ov-plan{min-height:0}
+  .ov-legend{top:calc(12px + env(safe-area-inset-top,0px));bottom:auto;left:12px;right:auto;gap:10px;padding:8px 12px}
+  .ov-stats{margin-top:12px}
+  .ov-stats div{padding:8px 10px}
+  .ov-stats b{font-size:20px}
+  .ov-note{display:none}
+}
+@media (prefers-reduced-motion:reduce){.pin i,.status::before{animation:none}.scrim,.photo,.toolbar,.titlebar{transition:none}}
+</style>
+
+<div class="app">
+  <main class="stage" id="stage">
+    <!-- the sheet waits behind the grave -->
+    <article class="sheet" id="sheet" hidden aria-label="Measured drawing">
+      <img id="rDrawing" alt="Measured drawing of the grave" draggable="false">
+    </article>
+
+    <canvas id="view" aria-label="3D scan of the grave. Drag to look around, pinch or scroll to zoom, tap the grave to see its drawing."></canvas>
+    <div class="scrim" id="scrim"></div>
+    <div class="photo" id="photoLayer" hidden><img id="photoImg" alt="" draggable="false"></div>
+    <div id="dots"></div>
+
+    <header class="titlebar">
+      <button class="backnav" id="toOverview" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19 8 12l7-7"/></svg>Graveyard</button>
+      <h1>Grave 2, Zone G</h1>
+      <p>Imambargah, Hassanabad · Sheet 61</p>
+    </header>
+
+    <button class="pin" id="pin" type="button" aria-label="Show the measured drawing">
+      <span class="callout glass"><b id="pinLabel">Grave 2</b><small>Tap the grave</small></span><i></i>
+    </button>
+
+    <div class="openbar" id="openbar" hidden>
+      <button type="button" id="backBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19 8 12l7-7"/></svg>Back</button>
+      <span class="obmid glass" id="obMid" hidden></span>
+      <span style="width:80px"></span>
+    </div>
+    <div class="openbar" id="alignbar" hidden>
+      <button type="button" id="alignCancel">Cancel</button>
+      <span class="obmid glass">Move the scan until it lines up with the photo</span>
+      <button type="button" class="fill" id="alignPin">Pin Photo</button>
+    </div>
+
+    <div class="capsule glass status" id="status" hidden></div>
+    <div class="capsule glass hintbar" id="hint" hidden>Tap the drawing to open it · Tap the grave to put it away</div>
+
+    <nav class="toolbar glass" aria-label="Viewer controls">
+      <label class="tb icon" for="modelFile" title="Open a 3D model" aria-label="Open a 3D model">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2.8 3.8 7.4v9.2l8.2 4.6 8.2-4.6V7.4Z"/><path d="M3.8 7.4 12 12l8.2-4.6M12 12v9.2"/></svg>
+      </label>
+      <input id="modelFile" type="file" accept=".glb,.gltf,.obj,.mtl,.bin,.jpg,.jpeg,.png,.webp" multiple hidden>
+      <button class="tb icon" id="editBtn" type="button" title="Add a photo or replace the drawing" aria-label="Add a photo or replace the drawing">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+      </button>
+      <span class="tsep"></span>
+      <button class="tb primary" id="tourBtn" type="button" title="Play the guided tour">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.6-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg>
+        <span class="lbl" id="tourLbl">Guided Tour</span>
+      </button>
+      <span class="tsep"></span>
+      <button class="tb icon" id="resetBtn" type="button" title="Reset view" aria-label="Reset view">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5v4.5h4.5"/></svg>
+      </button>
+      <button class="tb icon" id="upBtn" type="button" title="Turn the model upright" aria-label="Turn the model upright" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5M6 11l6-6 6 6"/></svg>
+      </button>
+    </nav>
+
+    <section class="tourcard glass" id="tourcard" hidden aria-live="polite" aria-label="Guided tour">
+      <div class="tc-segs" id="tcSegs"></div>
+      <div class="tc-top"><span id="tcStep">Stop 1 of 6</span><span class="tc-time" id="tcTime"></span></div>
+      <h3 id="tcTitle"></h3>
+      <p id="tcText"></p>
+      <div class="tc-ctl">
+        <button type="button" id="tcPrev" aria-label="Previous stop"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2.2v14H6zM19 6.2v11.6a.8.8 0 0 1-1.2.7L9.6 12.7a.8.8 0 0 1 0-1.4l8.2-5.8a.8.8 0 0 1 1.2.7Z"/></svg></button>
+        <button type="button" id="tcPlay" aria-label="Pause"><svg id="tcPlayIcon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg></button>
+        <button type="button" id="tcNext" aria-label="Next stop"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M15.8 5H18v14h-2.2zM5 6.2v11.6a.8.8 0 0 0 1.2.7l8.2-5.8a.8.8 0 0 0 0-1.4L6.2 5.5a.8.8 0 0 0-1.2.7Z"/></svg></button>
+        <button type="button" class="exit" id="tcExit">Done</button>
+      </div>
+    </section>
+    <span class="units" id="units"></span>
+  </main>
+
+  <section class="overview" id="overview" aria-label="Graveyard overview">
+    <aside class="ov-side glass">
+      <div class="ov-head">
+        <h1>An Ode to the Dead</h1>
+        <p>Imambargah Graveyard · Hassanabad, Srinagar</p>
+        <div class="ov-stats">
+          <div><b id="stZones">7</b><span>Zones</span></div>
+          <div><b id="stGraves">59</b><span>Graves</span></div>
+          <div><b id="stRec">1</b><span>In 3D</span></div>
+        </div>
+      </div>
+      <div class="ov-list" id="zoneList"><p class="ov-cap">Zones</p></div>
+      <p class="ov-note">Each zone sits at the coordinates written on its documented sheet. Orange marks a zone with a grave recorded in 3D.</p>
+    </aside>
+    <div class="ov-plan" id="plan">
+      <svg id="planSvg" role="img" aria-label="Plan of the graveyard zones, north up"></svg>
+      <div class="ov-legend glass" id="legend"></div>
+    </div>
+  </section>
+</div>
+
+<dialog id="dlg">
+  <form class="dlg" id="editForm" method="dialog">
+    <header>
+      <button class="navbtn navl" type="button" id="cancelEdit">Cancel</button>
+      <h3>Add to This Grave</h3>
+      <button class="navbtn strong navr" type="submit">Done</button>
+    </header>
+    <div class="form">
+      <div class="group">
+        <div class="row">
+          <span class="rl"><b>Photograph</b><small>Line it up with the scan, then pin it</small></span>
+          <label class="pick">Choose…<input id="fPhoto" type="file" accept="image/*"></label>
+        </div>
+        <div class="row">
+          <span class="rl"><b>Drawing Sheet</b><small>Replaces the current sheet</small></span>
+          <label class="pick">Choose…<input id="fDrawing" type="file" accept="image/*"></label>
+        </div>
+      </div>
+      <p class="footnote">Files you add stay on this device. Send them to Claude to publish them with the site.</p>
+    </div>
+  </form>
+</dialog>
+<div class="toast glass" id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
 <script>
 (function(){
-  document.getElementById('credit').textContent = `${ARCHIVE.project}. ${ARCHIVE.institution}. Funded by ${ARCHIVE.funder}.`;
-  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  document.getElementById('sites').innerHTML = ARCHIVE.sites.map((s, i) => {
-    const graves = s.zones.reduce((a, z) => a + z.graves.length, 0);
-    const recorded = s.zones.reduce((a, z) => a + z.graves.filter(Archive.hasRecord).length, 0);
-    return `<li><a class="site" href="${Archive.siteURL(s)}">
-      <span class="num">SITE ${String(i + 1).padStart(2, '0')}</span>
-      <div><h2>${esc(s.name)}</h2><div class="place">${esc(s.place)}</div></div>
-      <div class="zones" aria-label="Zones">${s.zones.map(z => `<span class="${z.graves.length ? 'has' : ''}" title="Zone ${z.id}">${z.id}</span>`).join('')}</div>
-      <div class="foot"><span>${s.zones.length} zone${s.zones.length > 1 ? 's' : ''} · ${graves ? `${graves} graves · ${recorded} recorded` : 'plans to come'}</span><span class="go">Open →</span></div>
-    </a></li>`;
-  }).join('');
+const EXAMPLE_DRAWING = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" font-family="IBM Plex Mono, monospace">
+<rect width="600" height="400" fill="#fbfbf6"/>
+<g fill="none" stroke="#1e2620" stroke-width="1.4">
+ <line x1="20" y1="320" x2="290" y2="320" stroke-dasharray="2 3"/>
+ <rect x="40" y="305" width="220" height="15"/><rect x="50" y="290" width="200" height="15"/><rect x="70" y="255" width="160" height="35"/>
+ <path d="M55 290V215L60 190L65 215V290Z"/><rect x="235" y="240" width="10" height="50"/>
+ <rect x="360" y="70" width="120" height="220"/><rect x="370" y="80" width="100" height="200"/><rect x="395" y="100" width="50" height="160"/>
+ <rect x="395" y="85" width="50" height="10" fill="#1e2620"/><rect x="400" y="265" width="40" height="8" fill="#1e2620"/>
+</g>
+<g stroke="#5b665a" stroke-width="0.8" fill="#5b665a" font-size="11">
+ <line x1="40" y1="345" x2="260" y2="345"/><line x1="40" y1="338" x2="40" y2="352"/><line x1="260" y1="338" x2="260" y2="352"/>
+ <text x="150" y="362" text-anchor="middle" stroke="none">2200</text>
+ <line x1="25" y1="190" x2="25" y2="320"/><line x1="18" y1="190" x2="32" y2="190"/><line x1="18" y1="320" x2="32" y2="320"/>
+ <text x="14" y="258" text-anchor="middle" stroke="none" transform="rotate(-90 14 258)">1300</text>
+ <line x1="360" y1="310" x2="480" y2="310"/><line x1="360" y1="303" x2="360" y2="317"/><line x1="480" y1="303" x2="480" y2="317"/>
+ <text x="420" y="327" text-anchor="middle" stroke="none">1200</text>
+ <path d="M530 70 538 100 530 94 522 100Z" stroke="none" fill="#1e2620"/><text x="530" y="116" text-anchor="middle" stroke="none">N</text>
+</g>
+<g font-size="11" fill="#1e2620" letter-spacing="1"><text x="40" y="40">SIDE ELEVATION</text><text x="360" y="40">PLAN</text></g>
+<text x="300" y="390" text-anchor="middle" font-size="10" fill="#9a6f20" letter-spacing="1.5">EXAMPLE SHEET · REPLACE WITH MEASURED DRAWING</text>
+</svg>`);
+
+/* Record for the test grave, taken from Sheet 61 */
+const record = {
+  id:'ZG-G02', title:'Grave 2, Zone G', site:'Imambargah, Hassanabad, Srinagar', lat:'34.102778', lng:'74.830606',
+  orientation:'', dating:'', condition:'',
+  notes:'Documentation and Conservation of Three Historical Graveyards of Kashmir. Islamic University of Science and Technology, Awantipora. Funded by The Barakat Trust, UK.',
+  sheet:'No. 61', scale:'1:10', drawnBy:'—', drawing:'drawing.png', drawingFile:'drawing.png', isExample:false
+};
+const SCAN={url:'scan.json', groundNormal:[0.1142,0.9896,-0.0875]};   // levels the 8° tilt in the scan's ground
+const tour={on:false,i:0,paused:false,remaining:0,dur:0,dwell:false,token:0,ended:false};
+let fly=null, lastNow=0;
+let viewing=false;   // true while a grave's 3D record is on screen
+const $=id=>document.getElementById(id);
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const toast=msg=>{const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2200);};
+const status=(msg,err)=>{const s=$('status');if(!msg){s.hidden=true;return;}s.textContent=msg;s.className='status'+(err?' err':'');s.hidden=false;};
+
+/* ---------- scene ---------- */
+const canvas=$('view'), stage=$('stage');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(38,1,0.01,1000);
+const controls=new THREE.OrbitControls(camera,canvas);
+controls.enableDamping=true; controls.maxPolarAngle=Math.PI*0.49;
+scene.add(new THREE.HemisphereLight(0xf3f1e8,0x4f5a47,0.85));
+const sun=new THREE.DirectionalLight(0xfff6e6,0.95); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048); scene.add(sun,sun.target);
+const ground=new THREE.Mesh(new THREE.CircleGeometry(1,64),new THREE.ShadowMaterial({opacity:0.2}));
+ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+let model=null; const hoverables=[];
+
+function placeholderGrave(){
+  const g=new THREE.Group();
+  const stone=new THREE.MeshStandardMaterial({color:0x9c9a8b,roughness:.95}), stone2=new THREE.MeshStandardMaterial({color:0x8a8c7c,roughness:.9});
+  const box=(w,h,d,y,z,m)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m||stone);b.position.set(0,y,z||0);g.add(b);};
+  box(1.2,.15,2.2,.075); box(1.0,.15,2.0,.225,0,stone2); box(.5,.35,1.6,.475);
+  const s=new THREE.Shape(); s.moveTo(-.25,0); s.lineTo(.25,0); s.lineTo(.25,.75); s.quadraticCurveTo(.25,.92,0,1.0); s.quadraticCurveTo(-.25,.92,-.25,.75); s.closePath();
+  const head=new THREE.Mesh(new THREE.ExtrudeGeometry(s,{depth:.1,bevelEnabled:false}),stone2); head.position.set(0,.3,-.95); g.add(head);
+  box(.4,.5,.08,.55,.9,stone2);
+  return g;
+}
+function setModel(obj){
+  if(model) scene.remove(model);
+  hoverables.length=0; model=obj;
+  obj.traverse(o=>{ if(o.isMesh){ o.castShadow=o.receiveShadow=true; hoverables.push(o);
+    const mats=(Array.isArray(o.material)?o.material:[o.material]).map(m=>{const c=m.clone(); if(c.emissive) c.userData.e0=c.emissive.clone(); return c;});
+    o.material=mats.length===1?mats[0]:mats; }});
+  const b=new THREE.Box3().setFromObject(obj), c=b.getCenter(new THREE.Vector3());
+  obj.position.x-=c.x; obj.position.z-=c.z; obj.position.y-=b.min.y;
+  scene.add(obj); fitView();
+}
+function fitView(){
+  if(!model) return;
+  const b=new THREE.Box3().setFromObject(model), size=b.getSize(new THREE.Vector3()), c=b.getCenter(new THREE.Vector3());
+  const r=Math.max(size.x,size.y,size.z)||1, dist=r/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)))*1.7;
+  camera.near=r/100; camera.far=r*100; camera.updateProjectionMatrix();
+  camera.position.copy(c).add(new THREE.Vector3(1.1,.75,1.25).normalize().multiplyScalar(dist));
+  controls.target.copy(c); controls.minDistance=r*.3; controls.maxDistance=r*8; controls.update();
+  ground.scale.setScalar(r*3);
+  sun.position.set(c.x+r*1.5,r*3,c.z+r*2); sun.target.position.copy(c);
+  const sc=sun.shadow.camera; sc.left=sc.bottom=-r*2; sc.right=sc.top=r*2; sc.near=.01; sc.far=r*10; sc.updateProjectionMatrix();
+}
+function resize(){ const w=stage.clientWidth,h=stage.clientHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stage);
+
+/* grave's position on screen: centre and top of its bounding box */
+const v=new THREE.Vector3();
+function graveOnScreen(){
+  const b=new THREE.Box3().setFromObject(model), cx=(b.min.x+b.max.x)/2, cz=(b.min.z+b.max.z)/2, W=stage.clientWidth, H=stage.clientHeight;
+  v.set(cx,(b.min.y+b.max.y)/2,cz).project(camera); const mid={x:(v.x*.5+.5)*W,y:(-v.y*.5+.5)*H};
+  v.set(cx,b.max.y,cz).project(camera); const top={x:(v.x*.5+.5)*W,y:(-v.y*.5+.5)*H,behind:v.z>1};
+  return {mid,top};
+}
+
+/* ---------- picking ---------- */
+const ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
+let hovering=false, downAt=null, state='closed';
+function pick(e){ const r=canvas.getBoundingClientRect(); ndc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1); ray.setFromCamera(ndc,camera); return ray.intersectObjects(hoverables,false).length>0; }
+function highlight(on){
+  if(on===hovering) return; hovering=on; canvas.style.cursor=on?'pointer':'grab';
+  const tint=new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--mark').trim()||'#a87a26');
+  hoverables.forEach(m=>(Array.isArray(m.material)?m.material:[m.material]).forEach(mt=>{ if(mt.emissive) on?mt.emissive.copy(tint).multiplyScalar(.22):mt.emissive.copy(mt.userData.e0||new THREE.Color(0)); }));
+}
+canvas.addEventListener('pointermove',e=>{
+  if(e.pointerType!=='mouse'||e.buttons||tour.on) return;
+  if(state==='closed') highlight(pick(e));
+  else if(state==='peek'){ const g=pick(e); highlight(g); canvas.style.cursor=g?'pointer':(onSheet(e)?'zoom-in':'grab'); }
+});
+canvas.addEventListener('pointerleave',()=>highlight(false));
+canvas.addEventListener('pointerdown',e=>{downAt=[e.clientX,e.clientY];});
+canvas.addEventListener('pointerup',e=>{ if(!downAt) return; const m=Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1]); downAt=null;
+  if(m>=6||e.button!==0||tour.on) return;
+  if(state==='closed'){ if(pick(e)) reveal(); }
+  else if(state==='peek'){ if(pick(e)) conceal(); else if(onSheet(e)) expand(); }
+});
+
+const pin=$('pin');
+function placePin(){
+  if(!model||state!=='closed'||tour.on){pin.hidden=true;return;}
+  const {top}=graveOnScreen(); if(top.behind){pin.hidden=true;return;}
+  pin.hidden=false; pin.style.transform=`translate(${top.x}px,${top.y-10}px) translate(-50%,-100%)`;
+}
+pin.addEventListener('click',reveal);
+/* render loop: started at the end of the script, once everything it calls has been declared */
+function loop(now){ requestAnimationFrame(loop); if(!viewing) return; now=now||performance.now(); stepTour(now); stepPose(now); if(!camLock) controls.update(); renderer.render(scene,camera); placePin(); placeDots();
+  document.body.classList.toggle('recordopen', state==='open'||state==='photo'||state==='align');
+  if(state==='peek') sheet.style.transform=computePath()[1];   // sheet stays tucked behind the grave while you orbit
+}
+
+/* ---------- the reveal: sheet rises from behind the grave, then comes forward ---------- */
+const sheet=$('sheet'), scrim=$('scrim'); let path=null;
+/* the drawing is sized to its own proportions, as large as the stage allows */
+function sizeSheet(){
+  const img=$('rDrawing'), ar=(img.naturalWidth&&img.naturalHeight)?img.naturalWidth/img.naturalHeight:1.414;
+  const top=68, pad=16, W=stage.clientWidth-pad*2, H=stage.clientHeight-top-pad;
+  let w=W, h=w/ar; if(h>H){ h=H; w=h*ar; }
+  sheet.style.width=w+'px'; sheet.style.height=h+'px';
+  sheet.style.left=(stage.clientWidth-w)/2+'px'; sheet.style.top=(top+(H-h)/2)+'px';
+}
+function computePath(){
+  sizeSheet();
+  const {mid,top}=graveOnScreen(), w=sheet.offsetWidth, h=sheet.offsetHeight, W=2*(sheet.offsetLeft+w/2), H=2*(sheet.offsetTop+h/2);
+  const s0=Math.min(.16,120/w), s1=Math.min(.34,300/w);
+  return [
+    `translate(${mid.x-W/2}px,${mid.y-H/2}px) scale(${s0}) rotate(-3deg)`,
+    `translate(${top.x-W/2}px,${top.y-H/2-(h*s1)/2-14}px) scale(${s1}) rotate(-1.5deg)`,
+    'translate(0px,0px) scale(1) rotate(0deg)'
+  ];
+}
+/* states: closed → (click grave) → peek → (click sheet) → open
+                    peek → (click grave) → closed;  open → (Back / Esc) → peek */
+function hint(on){ $('hint').hidden=!on; }
+async function reveal(){
+  if(state!=='closed') return;
+  state='busy'; highlight(false);
+  sheet.hidden=false; sheet.classList.remove('front'); sheet.scrollTop=0;
+  const p=computePath();
+  if(!reduced){ sheet.style.transform=p[0];
+    await sheet.animate([{transform:p[0]},{transform:p[1]}],{duration:750,easing:'cubic-bezier(.3,.6,.2,1)',fill:'forwards'}).finished; }
+  sheet.getAnimations().forEach(a=>a.cancel()); sheet.style.transform=computePath()[1];
+  state='peek'; hint(true);
+}
+async function expand(){
+  if(state!=='peek') return;
+  state='busy'; hint(false); highlight(false); controls.enabled=false;
+  const p=computePath(); sheet.classList.add('front'); scrim.classList.add('on');
+  if(!reduced) await sheet.animate([{transform:p[1]},{transform:p[2]}],{duration:650,easing:'cubic-bezier(.2,.8,.2,1)',fill:'forwards'}).finished;
+  sheet.getAnimations().forEach(a=>a.cancel()); sheet.style.transform='none';
+  state='open'; $('openbar').hidden=false; $('tourcard').classList.add('compact'); $('backBtn').focus();
+}
+async function shrink(){
+  if(state!=='open') return;
+  state='busy'; $('openbar').hidden=true; $('tourcard').classList.remove('compact');
+  const p=computePath();
+  if(!reduced) await sheet.animate([{transform:p[2]},{transform:p[1]}],{duration:520,easing:'cubic-bezier(.5,0,.6,1)',fill:'forwards'}).finished;
+  sheet.getAnimations().forEach(a=>a.cancel()); sheet.style.transform=p[1];
+  sheet.classList.remove('front'); scrim.classList.remove('on'); controls.enabled=true;
+  state='peek'; hint(true);
+}
+async function conceal(){
+  if(state!=='peek') return;
+  state='busy'; hint(false); highlight(false);
+  const p=computePath();
+  if(!reduced) await sheet.animate([{transform:p[1]},{transform:p[0]}],{duration:560,easing:'cubic-bezier(.4,0,.7,.4)',fill:'forwards'}).finished;
+  sheet.getAnimations().forEach(a=>a.cancel()); sheet.hidden=true; sheet.style.transform='';
+  state='closed';
+}
+function onSheet(e){ const r=sheet.getBoundingClientRect(); return e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom; }
+$('backBtn').addEventListener('click',()=>state==='photo'?closePhoto():shrink());
+scrim.addEventListener('click',shrink);
+document.addEventListener('keydown',e=>{ if(e.key!=='Escape'||$('dlg').open) return; if(state==='align'){ endAlign(false); return; } if(tour.on){ exitTour(); return; } if(state==='photo'){ closePhoto(); return; } state==='open'?shrink():conceal(); });
+
+/* ---------- model loading ---------- */
+/* Accepts one model file plus its companions in a single pick or drop:
+   .obj + .mtl + texture images, or .gltf + .bin + textures, or a single .glb */
+const extOf=f=>f.name.split('.').pop().toLowerCase();
+const readAs=(f,how)=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; how==='text'?r.readAsText(f):r.readAsArrayBuffer(f); });
+let blobURLs=[];
+async function loadFiles(list){
+  const files=[...list]; if(!files.length) return;
+  if(state!=='closed'||tour.on){ toast('Go back to the model first'); return; }
+  const main=files.find(f=>['glb','gltf','obj'].includes(extOf(f)));
+  if(!main){ status('Include a .obj, .glb or .gltf file.',true); return; }
+  status('Loading '+main.name+' …');
+  // every companion file becomes a local URL the loaders can find by file name
+  blobURLs.forEach(u=>URL.revokeObjectURL(u)); blobURLs=[];
+  const byName={}, missing=new Set();
+  files.forEach(f=>{ const u=URL.createObjectURL(f); blobURLs.push(u); byName[f.name.toLowerCase()]=u; });
+  const manager=new THREE.LoadingManager();
+  manager.setURLModifier(url=>{
+    if(/^(blob:|data:)/.test(url)) return url;
+    const n=decodeURIComponent(url.split(/[\\/]/).pop().split('?')[0]).toLowerCase();
+    if(byName[n]) return byName[n]; missing.add(n); return url;
+  });
+  manager.onLoad=()=>{ if(missing.size) status('Missing: '+[...missing].join(', ')+'. Select these together with the model.',true); };
+  try{
+    const ext=extOf(main); let obj;
+    if(ext==='obj'){
+      const loader=new THREE.OBJLoader(manager);
+      const mtl=files.find(f=>extOf(f)==='mtl');
+      if(mtl){ const mats=new THREE.MTLLoader(manager).parse(await readAs(mtl,'text'),''); mats.preload(); loader.setMaterials(mats); }
+      obj=loader.parse(await readAs(main,'text'));
+      obj.traverse(m=>{ if(!m.isMesh) return;
+        if(!mtl) m.material=new THREE.MeshStandardMaterial({color:0x9c9a8b,roughness:.95});
+        (Array.isArray(m.material)?m.material:[m.material]).forEach(mt=>{ if(mt.map){ mt.map.encoding=THREE.sRGBEncoding; } if(mt.shininess!==undefined) mt.shininess=4; mt.needsUpdate=true; });
+      });
+      if(!mtl) toast('Loaded without textures. Add the .mtl and image files to see the scan colours.');
+    } else {
+      const buf=await readAs(main,'buffer');
+      obj=await new Promise((res,rej)=>new THREE.GLTFLoader(manager).parse(buf,'',g=>res(g.scene),rej));
+    }
+    setModel(obj); done(main);
+    $('upBtn').hidden=false;
+  }catch(err){
+    status(extOf(main)==='obj'?'This OBJ could not be read. Check that it exported as text OBJ.':'This model could not be loaded. Export without Draco compression.',true);
+  }
+}
+/* scans often export Z-up; this turns the model upright and re-seats it on the ground */
+$('upBtn').addEventListener('click',()=>{
+  if(!model||state!=='closed'||tour.on) return;
+  model.rotation.x-=Math.PI/2; model.updateMatrixWorld(true);
+  const b=new THREE.Box3().setFromObject(model), c=b.getCenter(new THREE.Vector3());
+  model.position.x-=c.x; model.position.z-=c.z; model.position.y-=b.min.y; fitView();
+});
+function done(file){
+  status(''); toast('Loaded '+file.name);
+  const s=new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
+  $('units').textContent=`Extent ${s.x.toFixed(2)} × ${s.z.toFixed(2)} × ${s.y.toFixed(2)} (model units)`;
+}
+$('modelFile').addEventListener('change',e=>{ loadFiles(e.target.files); e.target.value=''; });
+['dragenter','dragover'].forEach(t=>stage.addEventListener(t,e=>{e.preventDefault();stage.classList.add('drag');}));
+['dragleave','drop'].forEach(t=>stage.addEventListener(t,e=>{e.preventDefault();stage.classList.remove('drag');}));
+stage.addEventListener('drop',e=>loadFiles(e.dataTransfer.files));
+$('resetBtn').addEventListener('click',()=>{ if(state==='closed') fitView(); });
+
+/* ---------- record content ---------- */
+function dms(x,p,n){const a=Math.abs(x),d=Math.floor(a),mf=(a-d)*60,m=Math.floor(mf),s=((mf-m)*60).toFixed(1);return `${d}° ${String(m).padStart(2,'0')}′ ${s.padStart(4,'0')}″ ${x>=0?p:n}`;}
+function txt(el,val){ el.textContent=val||'Not recorded'; el.classList.toggle('empty',!val); }
+function render(){
+  $('pinLabel').textContent=record.title;
+  $('rDrawing').src=record.drawing;
+}
+$('rDrawing').addEventListener('load',()=>{ if(state==='open') sizeSheet(); });
+new ResizeObserver(()=>{ if(state==='open') sizeSheet(); }).observe(stage);
+
+function openEdit(){ $('fDrawing').value=''; $('fPhoto').value=''; resetPicks(); $('dlg').showModal(); }
+$('editBtn').addEventListener('click',openEdit);
+function resetPicks(){ ['fPhoto','fDrawing'].forEach(id=>{ $(id).parentElement.firstChild.nodeValue='Choose…'; }); }
+['fPhoto','fDrawing'].forEach(id=>$(id).addEventListener('change',e=>{ const f=e.target.files[0]; e.target.parentElement.firstChild.nodeValue=f?f.name:'Choose…'; }));
+$('cancelEdit').addEventListener('click',()=>$('dlg').close());
+$('editForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const d=$('fDrawing').files[0], ph=$('fPhoto').files[0];
+  if(d){ record.drawing=URL.createObjectURL(d); }
+  $('dlg').close(); render(); if(d) toast('Drawing replaced');
+  if(ph) startAlign(ph);
+});
+
+/* ---------- guided tour ----------
+   Each stop: camera target as a fraction of the model's bounding box (x, y, z; z=0 is the north end),
+   view direction, distance as a multiple of the model's size, dwell time in seconds. */
+/* Stops for the scan of Grave 2: targets in the scan's own coordinates, distances in scan units */
+const TOUR_SCAN=[
+  {title:'Grave 2, Zone G', secs:8, local:[0,.35,0], dir:[1.1,.75,1.25], dist:3.6,
+   text:'This grave lies in Zone G of the graveyard at the Imambargah, Hassanabad, Srinagar. The scan records the stone in its setting.'},
+  {title:'The stone, first face', secs:8, local:[.05,.78,-.09], dir:[.43,.28,-.9], dist:1.9,
+   text:'The headstone rises to a pointed arch. Its face is carved with an inscription, recorded here as it stands today.'},
+  {title:'The stone, second face', secs:8, local:[.05,.78,-.09], dir:[-.43,.28,.9], dist:1.9,
+   text:'One section of the epitaph has been displaced diagonally from the main stone. The sheet also records the stone\'s existing tilt on site.'},
+  {title:'The reference photograph', secs:8, photo:0,
+   text:'The camera stands where the reference photograph on Sheet 61 was taken, and the photograph fades in over the scan.'},
+  {title:'From above', secs:7, local:[0,.35,0], dir:[0,1,.02], dist:3.2,
+   text:'Seen from above, the stone sits within its ground. The top view on Sheet 61 records it at 1:10.'},
+  {title:'Sheet 61', secs:10, local:[0,.35,0], dir:[1.1,.75,1.25], dist:3.6, sheet:true,
+   text:'The measured drawing rises from behind the grave: elevations, section, top view, tilt and details, with coordinates 34.102778, 74.830606.'}
+];
+/* Stops for any other model: targets as fractions of its bounding box */
+const TOUR_GENERIC=[
+  {title:'Grave G-01, Hassanabad', secs:7, target:[.5,.35,.5], dir:[1.1,.75,1.25], k:2.1,
+   text:'This grave sits within the Hassanabad graveyard in Rainawari, Srinagar. The tour moves from its setting to its measured drawing.'},
+  {title:'The headstone', secs:7, target:[.5,.72,.06], dir:[.35,.22,-1], k:.85,
+   text:'The headstone marks the head of the grave. In the full record, its inscription appears here with a transcription and translation.'},
+  {title:'The burial axis', secs:7, target:[.5,.3,.5], dir:[0,1,.02], k:1.5,
+   text:'Seen from above, the plan of the grave and its setting can be read against the measured drawing.'},
+  {title:'The footstone', secs:6, target:[.5,.4,.95], dir:[.4,.3,1], k:.8,
+   text:'A smaller stone marks the foot. Condition notes for each stone, such as cracks, losses and lichen, will be mapped on the model.'},
+  {title:'The measured record', secs:9, target:[.5,.35,.5], dir:[1.1,.75,1.25], k:2.1, sheet:true,
+   text:'The drawing rises from behind the grave: side elevation and plan at 1:20, with location, coordinates and survey notes.'}
+];
+const FLY_MS=2200, wait=ms=>new Promise(r=>setTimeout(r,ms));
+async function idle(){ while(state==='busy') await wait(50); }
+const clock=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+let TOUR=TOUR_SCAN;
+const tourLength=list=>Math.round(list.reduce((a,s)=>a+s.secs,0)+list.length*FLY_MS/1000+1.4);
+$('tourBtn').title=`Play the guided tour (about ${tourLength(TOUR_SCAN)} s)`;
+
+function flyTo(s,dur){
+  return new Promise(res=>{
+    const b=new THREE.Box3().setFromObject(model), size=b.getSize(new THREE.Vector3()), r=Math.max(size.x,size.y,size.z)||1;
+    let target, dist;
+    if(s.local){ model.updateMatrixWorld(true); target=(model.userData.scan||model).localToWorld(new THREE.Vector3(...s.local)); dist=s.dist; }
+    else { target=new THREE.Vector3(b.min.x+size.x*s.target[0], b.min.y+size.y*s.target[1], b.min.z+size.z*s.target[2]);
+      dist=r/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)))*s.k; }
+    const pos=target.clone().add(new THREE.Vector3(...s.dir).normalize().multiplyScalar(dist));
+    fly={p0:camera.position.clone(),t0:controls.target.clone(),pos,target,start:performance.now(),dur,res};
+  });
+}
+function stepTour(now){
+  const dt=lastNow?Math.min(now-lastNow,100):16; lastNow=now;
+  if(fly){ const k=fly.dur?Math.min(1,(now-fly.start)/fly.dur):1, e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+    camera.position.lerpVectors(fly.p0,fly.pos,e); controls.target.lerpVectors(fly.t0,fly.target,e);
+    if(k>=1){ const r=fly.res; fly=null; r(); } }
+  if(!tour.on) return;
+  controls.enabled=false; $('hint').hidden=true;
+  if(tour.dwell&&!tour.paused){
+    tour.remaining-=dt;
+    const seg=$('tcSegs').children[tour.i]; if(seg) seg.firstChild.style.width=Math.min(100,(1-tour.remaining/tour.dur)*100)+'%';
+    $('tcTime').textContent=clock(Math.max(0,tour.remaining)/1000+.99);
+    if(tour.remaining<=0){ tour.dwell=false; tour.i<TOUR.length-1?goStop(tour.i+1):endTour(); }
+  }
+}
+function renderCard(){
+  const s=TOUR[tour.i];
+  $('tcStep').textContent=`Stop ${tour.i+1} of ${TOUR.length}`; $('tcTitle').textContent=s.title; $('tcText').textContent=s.text; $('tcTime').textContent='';
+  [...$('tcSegs').children].forEach((el,j)=>el.firstChild.style.width=j<tour.i?'100%':'0');
+  $('tcPrev').disabled=tour.i===0; $('tcNext').disabled=false; tour.ended=false; setPauseIcon();
+}
+function setPauseIcon(){
+  const play=tour.paused||tour.ended;
+  $('tcPlayIcon').innerHTML=play?'<path d="M7 4v16l13-8Z"/>':'<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>';
+  $('tcPlay').setAttribute('aria-label',tour.ended?'Replay tour':play?'Resume':'Pause');
+}
+async function goStop(i){
+  const tok=++tour.token; tour.i=i; tour.dwell=false; renderCard();
+  const s=TOUR[i];
+  await idle(); if(tok!==tour.token) return;
+  if(state==='photo') await closePhoto();
+  if(state==='open') await shrink();
+  if(state==='peek'&&!s.sheet) await conceal();
+  if(tok!==tour.token) return;
+  if(s.photo!==undefined){ await openPhoto(s.photo); if(tok!==tour.token) return; tour.dur=tour.remaining=s.secs*1000; tour.dwell=true; return; }
+  await flyTo(s,reduced?0:FLY_MS); if(tok!==tour.token) return;
+  if(s.sheet){
+    if(state==='closed') await reveal();
+    await wait(reduced?0:1400); if(tok!==tour.token) return;
+    if(state==='peek') await expand();
+  }
+  if(tok!==tour.token) return;
+  tour.dur=tour.remaining=s.secs*1000; tour.dwell=true;
+}
+async function startTour(){
+  if(!model||tour.on) return;
+  await idle();
+  TOUR=model.userData.isScan?TOUR_SCAN:TOUR_GENERIC;
+  tour.on=true; tour.paused=false; tour.ended=false; document.body.classList.add('touring');
+  $('tcSegs').innerHTML=TOUR.map(()=>'<span><i></i></span>').join('');
+  $('tourcard').hidden=false;  highlight(false);
+  goStop(0);
+}
+function endTour(){
+  tour.ended=true; tour.dwell=false; $('tcTime').textContent='End'; $('tcNext').disabled=true; setPauseIcon();
+}
+async function exitTour(){
+  if(!tour.on) return;
+  tour.on=false; tour.token++; tour.dwell=false; fly=null;
+  $('tourcard').hidden=true;  document.body.classList.remove('touring');
+  await idle();
+  if(state==='photo') await closePhoto();
+  if(state==='open') await shrink();
+  if(state==='peek') await conceal();
+  controls.enabled=true;
+}
+$('tourBtn').addEventListener('click',()=>tour.on?exitTour():startTour());
+$('tcExit').addEventListener('click',exitTour);
+$('tcPrev').addEventListener('click',()=>{ if(tour.i>0){ tour.paused=false; goStop(tour.i-1); } });
+$('tcNext').addEventListener('click',()=>{ if(tour.i<TOUR.length-1){ tour.paused=false; goStop(tour.i+1); } });
+$('tcPlay').addEventListener('click',()=>{
+  if(tour.ended){ tour.paused=false; goStop(0); return; }
+  tour.paused=!tour.paused; setPauseIcon();
+});
+
+/* ---------- photographs, placed where they were taken ----------
+   pos, quat and frame are in the scan's own coordinates. Each pose was solved by matching the photo
+   against renders of the scan (SIFT features + PnP); fit = matched points and median error in pixels. */
+const PHOTOS=[
+  {src:'photo-1.jpg', title:'Reference photograph · Sheet 61',
+   pos:[-0.37932,0.61808,0.8621], quat:[0.04461,-0.187617,-0.205886,0.959386], vfov:58.109, aspect:0.67483,
+   frame:[[-0.34671,0.69835,0.74652],[-0.27069,0.6613,0.77725],[-0.32113,0.5398,0.75554],[-0.39715,0.57685,0.7248]],
+   fit:{points:884, medianPx:1.99}}
+];
+let camLock=false, pfly=null, savedView=null, frustums=null;
+const photoLayer=$('photoLayer'), photoImg=$('photoImg'), dotsEl=$('dots');
+const scanObj=()=>model&&model.userData.scan;
+const ease=k=>k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+function photoPose(p){
+  const s=scanObj(); s.updateMatrixWorld(true);
+  return {pos:s.localToWorld(new THREE.Vector3(...p.pos)),
+          q:s.getWorldQuaternion(new THREE.Quaternion()).multiply(new THREE.Quaternion(...p.quat)), fov:fitFov(p)};
+}
+function fitFov(p){   // vertical field of view at which the photo, fitted inside the stage, lines up with the 3D view
+  const W=stage.clientWidth, H=stage.clientHeight, dispH=Math.min(H, W/p.aspect);
+  return THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(p.vfov/2))*H/dispH));
+}
+function poseFly(to,dur){ return new Promise(res=>{ pfly={p0:camera.position.clone(),q0:camera.quaternion.clone(),f0:camera.fov,to,start:performance.now(),dur,res}; }); }
+function stepPose(now){
+  if(!pfly) return; const k=pfly.dur?Math.min(1,(now-pfly.start)/pfly.dur):1, e=ease(k);
+  camera.position.lerpVectors(pfly.p0,pfly.to.pos,e); camera.quaternion.slerpQuaternions(pfly.q0,pfly.to.q,e);
+  camera.fov=pfly.f0+(pfly.to.fov-pfly.f0)*e; camera.updateProjectionMatrix();
+  if(k>=1){ const r=pfly.res; pfly=null; r(); }
+}
+function levelPose(){   // same spot, horizon level, looking where the photo looked
+  const o=new THREE.PerspectiveCamera(); o.position.copy(camera.position);
+  const ahead=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion).multiplyScalar(controls.target.distanceTo(camera.position)||1).add(camera.position);
+  o.lookAt(ahead); return {pos:camera.position.clone(), q:o.quaternion.clone(), fov:38, target:ahead};
+}
+function buildPhotoMarks(){
+  dotsEl.innerHTML='';
+  PHOTOS.forEach((p,i)=>{ const b=document.createElement('button'); b.className='pdot'; b.type='button';
+    b.setAttribute('aria-label','Open photograph: '+p.title); b.innerHTML=`<i></i><span>${p.title}</span>`;
+    b.addEventListener('click',()=>openPhoto(i)); dotsEl.appendChild(b); p.el=b; });
+  const s=scanObj(); if(!s) return;
+  if(frustums) frustums.parent.remove(frustums);
+  const pts=[]; PHOTOS.forEach(p=>{ const c=p.frame.map(v=>v.map((x,j)=>p.pos[j]+(x-p.pos[j])*1.7)); for(let k=0;k<4;k++){ pts.push(...p.pos,...c[k], ...c[k],...c[(k+1)%4]); } });   // frame drawn a little larger than stored, for legibility
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+  const col=getComputedStyle(document.documentElement).getPropertyValue('--mark').trim()||'#a87a26';
+  frustums=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:new THREE.Color(col),transparent:true,opacity:.85,depthTest:true}));
+  frustums.raycast=()=>{}; s.add(frustums);
+}
+const pv=new THREE.Vector3();
+function placeDots(){
+  const show=!!scanObj()&&state==='closed'&&!tour.on;
+  if(frustums) frustums.visible=show;
+  PHOTOS.forEach(p=>{ if(!p.el) return;
+    if(!show){ p.el.hidden=true; return; }
+    scanObj().localToWorld(pv.set(...p.pos)); const d=pv.distanceTo(camera.position); pv.project(camera);
+    if(pv.z>1||d<0.15){ p.el.hidden=true; return; }
+    p.el.hidden=false; p.el.style.transform=`translate(${(pv.x*.5+.5)*stage.clientWidth}px,${(-pv.y*.5+.5)*stage.clientHeight}px)`;
+  });
+}
+async function openPhoto(i){
+  if(state!=='closed'||!scanObj()) return;
+  const p=PHOTOS[i]; state='busy'; highlight(false); camLock=true; controls.enabled=false;
+  savedView={pos:camera.position.clone(), q:camera.quaternion.clone(), fov:camera.fov, target:controls.target.clone()};
+  photoImg.src=p.src; photoImg.alt=p.title; $('obMid').textContent=p.title+' · Press and hold to compare';
+  await poseFly(photoPose(p), reduced?0:1900);
+  photoLayer.hidden=false; photoLayer.classList.remove('peekscan'); void photoLayer.offsetWidth; photoLayer.classList.add('on');
+  await wait(reduced?0:800);
+  state='photo'; $('openbar').hidden=false; $('obMid').hidden=false; $('tourcard').classList.add('compact'); $('backBtn').focus();
+}
+async function closePhoto(){
+  if(state!=='photo') return;
+  state='busy'; $('openbar').hidden=true; $('obMid').hidden=true; $('tourcard').classList.remove('compact');
+  photoLayer.classList.remove('on'); await wait(reduced?0:650); photoLayer.hidden=true;
+  const back=tour.on?levelPose():savedView;
+  await poseFly(back, reduced?0:(tour.on?700:1500));
+  controls.target.copy(back.target); camera.up.set(0,1,0); camLock=false;
+  if(!tour.on) controls.enabled=true;
+  state='closed';
+}
+// hold the photo to see the scan beneath it
+photoLayer.addEventListener('pointerdown',e=>{ if(state==='photo'){ photoLayer.classList.add('peekscan'); photoLayer.setPointerCapture(e.pointerId); } });
+['pointerup','pointercancel'].forEach(t=>photoLayer.addEventListener(t,()=>photoLayer.classList.remove('peekscan')));
+
+/* adding a photo in the browser: the photo is laid over the scan at half strength, you orbit until they match, then pin */
+let alignURL=null, alignAspect=1;
+function startAlign(file){
+  if(state!=='closed'||tour.on||!scanObj()){ toast('Go back to the model first'); return; }
+  alignURL=URL.createObjectURL(file); photoImg.src=alignURL;
+  photoImg.onload=()=>{ alignAspect=photoImg.naturalWidth/photoImg.naturalHeight; photoImg.onload=null; };
+  state='align'; photoLayer.hidden=false; photoLayer.classList.add('align'); $('alignbar').hidden=false;
+}
+function endAlign(pin){
+  if(state!=='align') return;
+  if(pin){
+    const s=scanObj(); s.updateMatrixWorld(true);
+    const H=stage.clientHeight, dispH=Math.min(H, stage.clientWidth/alignAspect);
+    const vfov=THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*dispH/H));
+    const pos=s.worldToLocal(camera.position.clone());
+    const q=s.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(camera.quaternion.clone());
+    const f=0.12, hh=f*Math.tan(THREE.MathUtils.degToRad(vfov/2)), hw=hh*alignAspect;
+    const frame=[[-hw,hh],[hw,hh],[hw,-hh],[-hw,-hh]].map(([x,y])=>new THREE.Vector3(x,y,-f).applyQuaternion(q).add(pos).toArray());
+    PHOTOS.push({src:alignURL, title:'Added photo '+PHOTOS.length, pos:pos.toArray(), quat:q.toArray(), vfov, aspect:alignAspect, frame});
+    buildPhotoMarks(); toast('Photo pinned. It stays in this tab; send it to Claude to place it permanently.');
+  }
+  photoLayer.classList.remove('align'); photoLayer.hidden=true; $('alignbar').hidden=true; state='closed';
+}
+$('alignPin').addEventListener('click',()=>endAlign(true));
+$('alignCancel').addEventListener('click',()=>endAlign(false));
+
+resize(); render();
+
+requestAnimationFrame(loop);
+
+/* load the published scan the first time a grave is opened; fall back to the placeholder if it can't load */
+let scanRequested=false;
+function loadScan(){ if(scanRequested) return; scanRequested=true;
+status('Loading scan … 0%');
+new THREE.GLTFLoader().load(SCAN.url, g=>{
+  const scan=g.scene;
+  scan.traverse(o=>{ if(o.isMesh){ o.material.metalness=0; o.material.roughness=1; if(o.material.map) o.material.map.anisotropy=renderer.capabilities.getMaxAnisotropy(); }});
+  scan.quaternion.setFromUnitVectors(new THREE.Vector3(...SCAN.groundNormal).normalize(), new THREE.Vector3(0,1,0));
+  const wrap=new THREE.Group(); wrap.add(scan); wrap.userData.isScan=true; wrap.userData.scan=scan;
+  setModel(wrap); status(''); buildPhotoMarks();
+  $('units').textContent='Photogrammetry scan · not to scale';
+}, e=>{ if(e.total) status('Loading scan … '+Math.round(e.loaded/e.total*100)+'%'); },
+()=>{ status('The scan could not load. Showing a placeholder.',true); setModel(placeholderGrave()); });
+}
+
+/* ---------- graveyard overview ----------
+   Grave counts are from each zone's map. Coordinates are those written on the zone's documented sheet.
+   Zone G's sheet (61) carries the same coordinates as Zone F's (56), so its position is marked as unconfirmed. */
+const SITE={name:'Imambargah, Hassanabad, Srinagar'};
+const ZONES=[
+  {id:'A', graves:1,  lat:34.102989, lon:74.829878, from:'Grave 1'},
+  {id:'B', graves:11, lat:34.102911, lon:74.830243, from:'Grave 2'},
+  {id:'C', graves:21, lat:34.102952, lon:74.830341, from:'Grave 1'},
+  {id:'D', graves:1,  lat:34.102970, lon:74.830365, from:'Grave 1'},
+  {id:'E', graves:15, lat:34.103101, lon:74.830395, from:'Grave 2'},
+  {id:'F', graves:3,  lat:34.102778, lon:74.830606, from:'Grave 2'},
+  {id:'G', graves:7,  lat:34.102778, lon:74.830606, from:'Grave 2', unsure:'Sheet 61 gives the same coordinates as Zone F, so this position needs checking.'}
+];
+const RECORDED={'G-2':'grave-g-2'};   // graves with a 3D record → their page
+const ov=$('overview'); let selZone=null;
+function zoneHas(z){ return Object.keys(RECORDED).some(k=>k.startsWith(z.id+'-')); }
+function buildOverview(){
+  $('stZones').textContent=ZONES.length;
+  $('stGraves').textContent=ZONES.reduce((a,z)=>a+z.graves,0);
+  $('stRec').textContent=Object.keys(RECORDED).length;
+  const list=$('zoneList');
+  ZONES.forEach(z=>{
+    const el=document.createElement('div'); el.className='zone'+(zoneHas(z)?' has':''); el.id='zone-'+z.id;
+    const rec=Object.keys(RECORDED).filter(k=>k.startsWith(z.id+'-')).length;
+    el.innerHTML=`<button type="button" aria-expanded="false"><span class="zbadge">${z.id}</span>
+      <span class="ztext"><b>Zone ${z.id}</b><small>${z.graves} ${z.graves===1?'grave':'graves'}${rec?` · ${rec} in 3D`:''}</small></span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></button>
+      <div class="zgraves"></div>${z.unsure?`<p class="zflag">${z.unsure}</p>`:''}`;
+    const grid=el.querySelector('.zgraves');
+    for(let n=1;n<=z.graves;n++){
+      const key=z.id+'-'+n, b=document.createElement('button'); b.type='button'; b.textContent=n;
+      if(RECORDED[key]){ b.className='gchip rec'; b.title=`Open Grave ${n}, Zone ${z.id} in 3D`; b.addEventListener('click',()=>{ location.hash=RECORDED[key]; }); }
+      else { b.className='gchip'; b.title=`Grave ${n}, Zone ${z.id}: not yet recorded`; b.setAttribute('aria-disabled','true'); }
+      grid.appendChild(b);
+    }
+    el.querySelector('button').addEventListener('click',()=>selectZone(selZone===z.id?null:z.id,true));
+    list.appendChild(el);
+  });
+  $('legend').innerHTML=`<span style="display:flex;align-items:center;gap:6px"><svg width="14" height="14"><circle cx="7" cy="7" r="6" fill="var(--mark)"/></svg>Recorded in 3D</span>
+    <span style="display:flex;align-items:center;gap:6px"><svg width="14" height="14"><circle cx="7" cy="7" r="6" fill="var(--label)"/></svg>Documented</span>`;
+  drawPlan();
+}
+function selectZone(id,fromList){
+  selZone=id;
+  document.querySelectorAll('.zone').forEach(e=>{ const on=e.id==='zone-'+id; e.classList.toggle('sel',on); e.querySelector('button').setAttribute('aria-expanded',on); });
+  document.querySelectorAll('.zpin').forEach(e=>e.classList.toggle('sel',e.dataset.z===id));
+  if(id){ const r=$('zone-'+id); r&&requestAnimationFrame(()=>r.scrollIntoView({block:'nearest',behavior:reduced?'auto':'smooth'})); }
+}
+function drawPlan(){
+  const svg=$('planSvg'), box=$('plan').getBoundingClientRect(); if(!box.width) return;
+  const W=box.width, H=box.height, NS='http://www.w3.org/2000/svg';
+  const lat0=ZONES.reduce((a,z)=>a+z.lat,0)/ZONES.length, lon0=ZONES.reduce((a,z)=>a+z.lon,0)/ZONES.length;
+  const mx=111320*Math.cos(lat0*Math.PI/180), my=110950;   // metres per degree
+  const P=ZONES.map(z=>({z, x:(z.lon-lon0)*mx, y:(z.lat-lat0)*my}));
+  const minX=Math.min(...P.map(p=>p.x)), maxX=Math.max(...P.map(p=>p.x)), minY=Math.min(...P.map(p=>p.y)), maxY=Math.max(...P.map(p=>p.y));
+  const phone=W<560, padX=phone?48:110, padTop=phone?84:90, padBot=phone?56:110;
+  const padR=padX+(phone?44:60);   // room for a pin stacked beside one that shares its coordinates
+  const k=Math.min((W-padX-padR)/Math.max(1,maxX-minX), (H-padTop-padBot)/Math.max(1,maxY-minY));
+  const cx=padX+(W-padX-padR)/2-(minX+maxX)/2*k, cy=padTop+(H-padTop-padBot)/2+(minY+maxY)/2*k;
+  const X=x=>cx+x*k, Y=y=>cy-y*k;   // north up
+  let g=''; const step=10*k;   // 10 m grid
+  for(let x=X(0)%step;x<W;x+=step) g+=`<line class="grid" x1="${x}" y1="0" x2="${x}" y2="${H}"/>`;
+  for(let y=Y(0)%step;y<H;y+=step) g+=`<line class="grid" x1="0" y1="${y}" x2="${W}" y2="${y}"/>`;
+  // stack pins that share a position
+  const seen={}; let pins='';
+  P.forEach(p=>{
+    const key=p.x.toFixed(1)+','+p.y.toFixed(1); const dup=seen[key]||0; seen[key]=dup+1;
+    const r=(phone?10:13)+Math.sqrt(p.z.graves)*(phone?1.7:2.6), px=X(p.x)+dup*(r*2+8), py=Y(p.y);
+    pins+=`<g class="zpin${zoneHas(p.z)?' has':''}${p.z.unsure?' unsure':''}" data-z="${p.z.id}" tabindex="0" role="button" aria-label="Zone ${p.z.id}, ${p.z.graves} graves">
+      <circle class="halo" cx="${px}" cy="${py}" r="${r+10}"/><circle class="core" cx="${px}" cy="${py}" r="${r}"/>
+      <title>Zone ${p.z.id} · ${p.z.graves} ${p.z.graves===1?'grave':'graves'}</title><text x="${px}" y="${py}">${p.z.id}</text></g>`;
+  });
+  // scale bar (10 m) and north arrow
+  const sb=`<g transform="translate(${W-(phone?24:40)-step},${H-(phone?20:40)})"><rect width="${step}" height="4" rx="2" fill="var(--label)"/>
+    <text x="${step/2}" y="-8" text-anchor="middle" style="font:500 12px var(--f-text);fill:var(--label2)">10 m</text></g>`;
+  const na=`<g transform="translate(${W-48},${padTop-30})"><circle r="20" fill="var(--glass)" stroke="var(--hair)"/>
+    <path d="M0 -13 6 5 0 2 -6 5Z" fill="var(--danger)"/><text y="16" text-anchor="middle" style="font:700 9px var(--f-text);fill:var(--label2)">N</text></g>`;
+  svg.innerHTML=g+pins+sb+na;
+  svg.querySelectorAll('.zpin').forEach(el=>{ const go=()=>selectZone(el.dataset.z===selZone?null:el.dataset.z,false);
+    el.addEventListener('click',go); el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } }); });
+  if(selZone) selectZone(selZone,true);
+}
+new ResizeObserver(()=>{ if(!ov.classList.contains('away')) drawPlan(); }).observe($('plan'));
+
+/* routing: #grave-g-2 opens that grave; anything else shows the overview */
+async function leaveGrave(){
+  if(tour.on) await exitTour();
+  await idle();
+  if(state==='align') endAlign(false);
+  if(state==='photo') await closePhoto();
+  if(state==='open') await shrink();
+  if(state==='peek') await conceal();
+}
+async function route(){
+  const h=location.hash.replace('#','');
+  if(Object.values(RECORDED).includes(h)){
+    viewing=true; ov.classList.add('away'); ov.setAttribute('aria-hidden','true'); loadScan(); resize();
+    if(selZone!=='G') selectZone('G',true);
+  } else {
+    if(viewing) await leaveGrave();
+    viewing=false; ov.classList.remove('away'); ov.removeAttribute('aria-hidden'); drawPlan();
+  }
+}
+$('toOverview').addEventListener('click',()=>{ if(location.hash) location.hash=''; else route(); });
+window.addEventListener('hashchange',route);
+buildOverview(); route();
 })();
 </script>
+
 </body>
 </html>
