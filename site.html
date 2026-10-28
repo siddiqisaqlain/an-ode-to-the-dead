@@ -31,7 +31,7 @@ body.ready .veil{opacity:0}
 .frame::after{right:-1px;bottom:-1px;border-width:0 1.5px 1.5px 0}
 
 .titlebar{position:fixed;z-index:4;top:max(36px,calc(env(safe-area-inset-top,0px) + 24px));left:max(36px,calc(env(safe-area-inset-left,0px) + 24px));right:420px;pointer-events:none}
-.titlebar .crumbs{margin-bottom:6px;font-size:14px}
+.titlebar .navpill{margin-bottom:14px}
 .titlebar h1{font-family:var(--f-display);font-weight:600;font-size:clamp(30px,3.6vw,44px);line-height:1.02;letter-spacing:-.03em;margin:0;color:var(--ink)}
 .titlebar p{margin:8px 0 0;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;color:var(--ink2);text-transform:uppercase}
 .rise{opacity:0;transform:translateY(12px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
@@ -121,6 +121,17 @@ body.nomap .rise{opacity:1;transform:none}
   .frame{display:none}
   .maplibregl-ctrl-bottom-left{left:20px;bottom:96px}
 }
+.gn.picked{transform:scale(1.5);box-shadow:0 0 0 8px color-mix(in srgb,var(--mark) 30%,transparent),0 2px 6px rgba(0,0,0,.3)}
+
+/* opening a grave: the chrome steps aside, the camera dives onto the grave, and the grave page's stage blooms out of it */
+body.leaving .panel{transform:translateX(calc(100% + 24px))}
+body.leaving .tabs{opacity:0;transform:translate(-50%,20px)}
+body.leaving .rise,body.leaving .north,body.leaving .maplibregl-ctrl-bottom-left{opacity:0;transition:opacity .4s var(--ease)}
+body.leaving .gn:not(.picked){opacity:0;transition:opacity .3s}
+.bloom{position:fixed;inset:0;z-index:9;pointer-events:none;opacity:0;transform:scale(.15);
+  background:radial-gradient(circle at 50% 55%,var(--bg) 0 32%,color-mix(in srgb,var(--bg) 0%,transparent) 64%)}
+body.bloom-on .bloom{opacity:1;transform:scale(3.2);transition:opacity .35s var(--ease),transform .65s cubic-bezier(.6,0,.4,1)}
+@media (max-width:760px){ body.leaving .panel{transform:translateY(40px);opacity:0;transition:opacity .4s,transform .4s} }
 @media (prefers-reduced-motion:reduce){ .veil,.rise,.zt > *,.panel,.tabs,.gn{transition:none!important} }
 </style>
 </head>
@@ -129,9 +140,10 @@ body.nomap .rise{opacity:1;transform:none}
 <div class="fade"></div>
 <div class="veil"></div>
 <div class="frame" aria-hidden="true"></div>
+<div class="bloom" aria-hidden="true"></div>
 
 <header class="titlebar">
-  <ol class="crumbs rise"><li><a href="index.html">Sites</a></li></ol>
+  <nav class="rise" id="nav"></nav>
   <h1 class="rise" id="siteName"></h1>
   <p class="rise" id="siteMeta"></p>
 </header>
@@ -150,6 +162,7 @@ body.nomap .rise{opacity:1;transform:none}
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 <script src="assets/archive.js"></script>
 <script src="assets/map.js"></script>
+<script src="assets/nav.js"></script>
 <script>
 (function(){
 const $ = id => document.getElementById(id);
@@ -164,6 +177,11 @@ const G = MapKit.geo(site), L = G.labels, total = L.reduce((a, l) => a + l.grave
 document.title = site.name + ' · Zones';
 $('siteName').textContent = site.name;
 $('siteMeta').textContent = `${site.place} · ${site.zones.length} zone${site.zones.length > 1 ? 's' : ''}${total ? ` · ${total} graves` : ''}`;
+const nav = Nav.mount({ el: $('nav'), trail: [{ label: 'Sites', href: 'index.html' }, { label: site.name }], back: { label: 'Sites', href: 'index.html' } });
+function setNav(z){
+  if (z) nav.set([{ label: 'Sites', href: 'index.html' }, { label: site.name, href: Archive.siteURL(site) }, { label: 'Zone ' + z.id }], { label: 'All zones', run: () => focusZone('') });
+  else nav.set([{ label: 'Sites', href: 'index.html' }, { label: site.name }], { label: 'Sites', href: 'index.html' });
+}
 $('tabs').innerHTML = `<button type="button" data-z="" aria-pressed="true">All</button>` +
   site.zones.map(z => `<button type="button" data-z="${z.id}" aria-pressed="false">${z.id}${z.graves.length ? `<small>${z.graves.length}</small>` : ''}</button>`).join('');
 
@@ -279,7 +297,7 @@ function focusZone(id){
   });
   history.replaceState(null, '', Archive.siteURL(site, l ? l.zone : null));
   L.forEach(x => { map.setFeatureState({ source: 'zones', id: x.i }, { on: x === l, dim: !!l && x !== l }); });
-  document.body.classList.toggle('zoomed', !!l);
+  document.body.classList.toggle('zoomed', !!l); setNav(l && l.zone);
   if (l) {
     showZone(l); showNums(l);
     const b = new maplibregl.LngLatBounds(l.bounds[0], l.bounds[1]);
@@ -289,7 +307,27 @@ function focusZone(id){
     map.flyTo({ ...frame(all, { bearing: map.getBearing(), pitch: 55, max: 20, less: .1 }), duration: reduced ? 0 : 1200, curve: 1.3, essential: true });
   }
 }
-function openGrave(z, n){ const g = Archive.grave(z, n); if (g) location.href = Archive.graveURL(site, z, g); }
+const closeUp = (at, b) => ({ center: at, zoom: 22.3, pitch: 72, bearing: b });
+const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+let leaving = false;
+function openGrave(z, n){
+  const g = Archive.grave(z, n); if (!g || leaving) return;
+  const url = Archive.graveURL(site, z, g), l = L.find(x => x.zone === z), m = l && l.graves.find(x => x.n === n);
+  if (reduced || !m) { location.href = url; return; }
+  leaving = true; current = l; hotGrave(n);
+  try { sessionStorage.setItem('ode:dive', String(Date.now())); } catch (e) {}
+  document.body.classList.add('leaving');
+  nums.forEach(k => k.getElement().classList.toggle('picked', +k.getElement().dataset.n === n));
+  map.flyTo({ ...closeUp(m.at, map.getBearing() + 40), duration: 1500, curve: 1.6, easing: ease, essential: true });
+  setTimeout(() => document.body.classList.add('bloom-on'), 1000);
+  setTimeout(() => { location.href = url; }, 1550);
+}
+// back from the grave page (bfcache): undo the dive
+addEventListener('pageshow', e => { if (e.persisted && leaving) { leaving = false; document.body.classList.remove('leaving', 'bloom-on'); if (current) focusZone(current.zone.id); } });
+document.getElementById('list').addEventListener('click', e => {
+  const a = e.target.closest('a[data-n]'); if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button || !current || !map.loaded()) return;
+  e.preventDefault(); openGrave(current.zone, +a.dataset.n);
+});
 
 /* hover, both ways between the map and the list */
 let hz = null, hg = null;
@@ -335,6 +373,11 @@ map.on('load', () => {
   document.body.classList.add('ready');
   tags.forEach(t => t.addTo(map));
   const start = Archive.zone(site, P.zone);
+  let from = null; try { from = JSON.parse(sessionStorage.getItem('ode:return') || 'null'); sessionStorage.removeItem('ode:return'); } catch (e) {}
+  const sl = start && L.find(x => x.zone === start), back = from && sl && from.zone === start.id && Date.now() - from.t < 15000 && sl.graves.find(x => x.n === from.grave);
+  if (back) {   // came back from that grave: start where the dive ended and rise out to the zone
+    map.jumpTo(closeUp(back.at, bearing + 40)); document.body.classList.add('landed'); focusZone(start.id); return;
+  }
   map.flyTo({ ...frame(all, { bearing, pitch: 55, max: 20, less: .1 }), duration: reduced ? 0 : 1600, curve: 1.2, essential: true });
   map.once('moveend', () => { document.body.classList.add('landed'); if (start) setTimeout(() => focusZone(start.id), reduced ? 0 : 250); });
 });

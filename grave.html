@@ -161,7 +161,16 @@ dialog::backdrop{background:rgba(0,0,0,.32)}
 @media (prefers-reduced-motion:reduce){.pin i,.status::before{animation:none}.scrim,.photo,.toolbar,.titlebar{transition:none}}
 
 /* where this grave sits: breadcrumb under the large title; neighbouring graves in the toolbar */
-.titlebar .crumbs{margin-top:6px}
+.titlebar .navpill{margin-bottom:12px}
+
+/* arrival: the stage blooms open (continuing the dive from the zone map) and the chrome settles in after the camera */
+.arrive{position:absolute;inset:0;z-index:20;pointer-events:none;background:var(--bg);animation:arrive .9s var(--ease) .1s forwards}
+@keyframes arrive{to{opacity:0;visibility:hidden}}
+@keyframes titleIn{from{opacity:0;transform:translateY(-12px)}}
+@keyframes toolIn{from{opacity:0;transform:translateX(-50%) translateY(18px)}}
+.titlebar{animation:titleIn .8s var(--ease) .8s backwards}
+.toolbar{animation:toolIn .8s var(--ease) 1s backwards}
+@media (prefers-reduced-motion:reduce){.arrive{display:none}.titlebar,.toolbar{animation:none}}
 .tb[aria-disabled="true"]{opacity:.3;pointer-events:none}
 a.tb{text-decoration:none}
 
@@ -207,8 +216,8 @@ a.tb{text-decoration:none}
     <div id="dots"></div>
 
     <header class="titlebar">
+      <nav id="nav"></nav>
       <h1 id="graveName">Grave</h1>
-      <ol class="crumbs"><li><a href="index.html">Sites</a></li><li><a id="crSite"></a></li><li><a id="crZone"></a></li></ol>
     </header>
 
     <button class="pin" id="pin" type="button" aria-label="Show the measured drawing">
@@ -282,6 +291,7 @@ a.tb{text-decoration:none}
       <div class="list" id="filesList"></div>
     </section>
     <div class="lightbox" id="lightbox" hidden><header><span id="lbTitle"></span><button type="button" id="lbClose">Done</button></header><img id="lbImg" alt=""></div>
+    <div class="arrive" aria-hidden="true"></div>
   </main>
 </div>
 
@@ -316,6 +326,7 @@ a.tb{text-decoration:none}
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
 <script src="assets/archive.js"></script>
 <script src="assets/models.js"></script>
+<script src="assets/nav.js"></script>
 <script>
 (function(){
 const EXAMPLE_DRAWING = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
@@ -383,7 +394,7 @@ function setModel(obj){
     o.material=mats.length===1?mats[0]:mats; }});
   const b=new THREE.Box3().setFromObject(obj), c=b.getCenter(new THREE.Vector3());
   obj.position.x-=c.x; obj.position.z-=c.z; obj.position.y-=b.min.y;
-  scene.add(obj); fitView();
+  scene.add(obj); fitView(); playIntro();
 }
 function fitView(){
   if(!model) return;
@@ -396,6 +407,23 @@ function fitView(){
   sun.position.set(c.x+r*1.5,r*3,c.z+r*2); sun.target.position.copy(c);
   const sc=sun.shadow.camera; sc.left=sc.bottom=-r*2; sc.right=sc.top=r*2; sc.near=.01; sc.far=r*10; sc.updateProjectionMatrix();
 }
+/* arrival: the camera comes down onto the grave from high above, carrying on the dive from the zone map */
+let intro=null, introDone=false;
+const dove=(()=>{ try{ const t=+sessionStorage.getItem('ode:dive'); sessionStorage.removeItem('ode:dive'); return Date.now()-t<8000; }catch(e){ return false; } })();
+function playIntro(){
+  if(introDone) return; introDone=true; if(reduced) return;
+  const end=new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
+  intro={end,start:{radius:end.radius*(dove?3:1.9),phi:dove?.06:end.phi*.55,theta:end.theta-(dove?1.3:.6)},t0:performance.now(),dur:dove?2200:1500};
+  controls.enabled=false; stepIntro(intro.t0);
+}
+function stepIntro(now){
+  if(!intro) return;
+  const k=Math.min(1,(now-intro.t0)/intro.dur), r=1-Math.pow(1-k,4), a=1-Math.pow(1-k,3), s=intro.start, e=intro.end;
+  camera.position.setFromSpherical(new THREE.Spherical(s.radius+(e.radius-s.radius)*r,s.phi+(e.phi-s.phi)*a,s.theta+(e.theta-s.theta)*a)).add(controls.target);
+  camera.lookAt(controls.target);
+  if(k>=1){ intro=null; controls.enabled=true; }
+}
+canvas.addEventListener('pointerdown',()=>{ if(intro) intro.t0-=intro.dur; },true);   // a touch skips to the end
 function resize(){ const w=stage.clientWidth,h=stage.clientHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(stage);
 
@@ -432,13 +460,13 @@ canvas.addEventListener('pointerup',e=>{ if(!downAt) return; const m=Math.hypot(
 
 const pin=$('pin');
 function placePin(){
-  if(!model||state!=='closed'||tour.on){pin.hidden=true;return;}
+  if(!model||state!=='closed'||tour.on||intro){pin.hidden=true;return;}
   const {top}=graveOnScreen(); if(top.behind){pin.hidden=true;return;}
   pin.hidden=false; pin.style.transform=`translate(${top.x}px,${top.y-10}px) translate(-50%,-100%)`;
 }
 pin.addEventListener('click',reveal);
 /* render loop: started at the end of the script, once everything it calls has been declared */
-function loop(now){ requestAnimationFrame(loop); now=now||performance.now(); stepTour(now); stepPose(now); if(!camLock) controls.update(); renderer.render(scene,camera); placePin(); placeDots();
+function loop(now){ requestAnimationFrame(loop); now=now||performance.now(); stepTour(now); stepPose(now); stepIntro(now); if(!camLock) controls.update(); renderer.render(scene,camera); placePin(); placeDots();
   document.body.classList.toggle('recordopen', state==='open'||state==='photo'||state==='align');
   if(state==='peek') sheet.style.transform=computePath()[1];   // sheet stays tucked behind the grave while you orbit
 }
@@ -795,8 +823,12 @@ $('alignCancel').addEventListener('click',()=>endAlign(false));
 /* ---------- header: where this grave sits, and its neighbours in the zone ---------- */
 document.title=`${record.title} · ${SITE.name}`;
 $('graveName').textContent=record.title;
-$('crSite').textContent=SITE.name; $('crSite').href=Archive.siteURL(SITE);
-$('crZone').textContent='Zone '+ZONE.id; $('crZone').href=Archive.siteURL(SITE,ZONE);
+Nav.mount({ el:$('nav'),
+  trail:[{label:'Sites',href:'index.html'},{label:SITE.name,href:Archive.siteURL(SITE)},{label:'Zone '+ZONE.id,href:Archive.siteURL(SITE,ZONE)},{label:'Grave '+GRAVE.n}],
+  back:{label:'Zone '+ZONE.id,href:Archive.siteURL(SITE,ZONE)},
+  // the zone map opens close on this grave and rises out of it
+  beforeLeave:()=>{ try{ sessionStorage.setItem('ode:return',JSON.stringify({zone:ZONE.id,grave:GRAVE.n,t:Date.now()})); }catch(e){} } });
+$('nav').querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{ if(a.getAttribute('href')===Archive.siteURL(SITE,ZONE)) try{ sessionStorage.setItem('ode:return',JSON.stringify({zone:ZONE.id,grave:GRAVE.n,t:Date.now()})); }catch(e){} }));
 const order=[...ZONE.graves].sort((a,b)=>a.n-b.n), at=order.indexOf(GRAVE);
 [['prevGrave',order[at-1],'Previous'],['nextGrave',order[at+1],'Next']].forEach(([id,g,word])=>{
   const a=$(id); if(g){ a.href=Archive.graveURL(SITE,ZONE,g); a.title=`${word}: Grave ${g.n}`; } else a.setAttribute('aria-disabled','true');
