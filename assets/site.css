@@ -1,44 +1,64 @@
-/* Shared by every page: colour tokens, type, the top bar with its breadcrumb trail, buttons. */
+/* Shared by every page, in the Apple design language: system font, system colours, translucent glass,
+   large titles, capsule buttons. Light and dark. */
 :root{
-  --bg:#e7eae2; --bg2:#d5dacd; --surface:#f8f9f4; --ink:#1e2620; --muted:#5b665a; --line:#c6ccbf;
-  --accent:#3d6a4d; --accent-ink:#ffffff; --mark:#a87a26; --ground:#cfd5c4; --zone:#e2e5d9;
-  --f-display:"Young Serif", Georgia, "Times New Roman", serif;
-  --f-body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --bg:#f5f5f7; --bg2:#e3e3e8; --card:#ffffff;
+  --label:#1d1d1f; --label2:#6e6e73; --label3:#aeaeb2;
+  --glass:rgba(255,255,255,.72); --glass-strong:rgba(255,255,255,.9); --hair:rgba(0,0,0,.08); --fill:rgba(118,118,128,.12); --fill2:rgba(118,118,128,.2);
+  --tint:#0071e3; --tint-ink:#ffffff; --mark:#ff9500; --danger:#ff3b30;
+  --ground:#dcdce1; --zone:#f2f2f5; --wall:#c7c7cc;
+  --shadow:0 10px 40px -8px rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.06);
+  --f-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif;
+  --f-text:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;
+  --ease:cubic-bezier(.32,.72,0,1);
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#131714; --bg2:#1c221d; --surface:#1b211c; --ink:#e3e8de; --muted:#9aa596; --line:#2f3830;
-  --accent:#86b693; --accent-ink:#0f1610; --mark:#d8ab4f; --ground:#1e251f; --zone:#29312a; color-scheme:dark}}
+  --bg:#1c1c1e; --bg2:#000000; --card:#2c2c2e; --label:#f5f5f7; --label2:#98989d; --label3:#636366;
+  --glass:rgba(36,36,38,.7); --glass-strong:rgba(44,44,46,.92); --hair:rgba(255,255,255,.1); --fill:rgba(118,118,128,.24); --fill2:rgba(118,118,128,.36);
+  --tint:#0a84ff; --tint-ink:#ffffff; --mark:#ff9f0a; --danger:#ff453a;
+  --ground:#1f1f22; --zone:#2c2c2e; --wall:#48484a;
+  --shadow:0 10px 40px -8px rgba(0,0,0,.6),0 2px 6px rgba(0,0,0,.3); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#131714; --bg2:#1c221d; --surface:#1b211c; --ink:#e3e8de; --muted:#9aa596; --line:#2f3830;
-  --accent:#86b693; --accent-ink:#0f1610; --mark:#d8ab4f; --ground:#1e251f; --zone:#29312a; color-scheme:dark}
+  --bg:#1c1c1e; --bg2:#000000; --card:#2c2c2e; --label:#f5f5f7; --label2:#98989d; --label3:#636366;
+  --glass:rgba(36,36,38,.7); --glass-strong:rgba(44,44,46,.92); --hair:rgba(255,255,255,.1); --fill:rgba(118,118,128,.24); --fill2:rgba(118,118,128,.36);
+  --tint:#0a84ff; --tint-ink:#ffffff; --mark:#ff9f0a; --danger:#ff453a;
+  --ground:#1f1f22; --zone:#2c2c2e; --wall:#48484a;
+  --shadow:0 10px 40px -8px rgba(0,0,0,.6),0 2px 6px rgba(0,0,0,.3); color-scheme:dark}
 
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+body{margin:0;background:var(--bg);color:var(--label);font-family:var(--f-text);font-size:15px;line-height:1.4;letter-spacing:-.01em;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 img{max-width:100%}
 [hidden]{display:none!important}
 a{color:inherit}
-button,input,textarea{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button,input,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+button{-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--tint) 55%,transparent);outline-offset:2px}
 
-.bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-block:12px;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
-  border-bottom:1px solid var(--line);background:var(--surface);z-index:5}
-.brand{display:flex;flex-direction:column;min-width:0;margin-right:auto}
-.brand h1{font-family:var(--f-display);font-weight:400;font-size:20px;margin:0;line-height:1.2}
-.crumbs{display:flex;flex-wrap:wrap;gap:2px 6px;margin:0;padding:0;list-style:none;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.crumbs li+li::before{content:"/";margin-right:6px;opacity:.6}
-.crumbs a{text-decoration:none}
-.crumbs a:hover{color:var(--accent);text-decoration:underline}
-.actions{display:flex;gap:8px;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:transparent;text-decoration:none;
-  padding:8px 14px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:500;color:var(--ink)}
-.btn:hover{border-color:var(--accent)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.btn[aria-disabled="true"]{opacity:.35;pointer-events:none}
-.btn svg{width:16px;height:16px;flex:none}
-.tag{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
-.tag.on{border-color:var(--accent);color:var(--accent)}
-@media (max-width:760px){ .brand h1{font-size:17px} .btn .lbl{display:none} }
+/* translucent material */
+.glass{background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);
+  border:.5px solid var(--hair);box-shadow:var(--shadow)}
+
+/* breadcrumb trail: Sites › Site › Zone */
+.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;margin:0;padding:0;list-style:none;font-size:15px;color:var(--label2)}
+.crumbs li+li::before{content:"›";margin-right:6px;color:var(--label3)}
+.crumbs a{color:var(--tint);text-decoration:none;pointer-events:auto}
+.crumbs a:hover{text-decoration:underline}
+
+/* large title */
+.largetitle{font-family:var(--f-display);font-weight:700;font-size:34px;line-height:1.1;letter-spacing:-.025em;margin:0;text-wrap:balance}
+
+/* capsule buttons */
+.cbtn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:44px;min-width:44px;padding:0 16px;border:0;border-radius:999px;
+  background:var(--fill);color:var(--label);font-size:15px;font-weight:500;cursor:pointer;white-space:nowrap;text-decoration:none;transition:background .2s,transform .15s var(--ease)}
+.cbtn:hover{background:var(--fill2)}
+.cbtn:active{transform:scale(.96)}
+.cbtn svg{width:20px;height:20px;flex:none}
+.cbtn.icon{padding:0;width:44px}
+
+.tag{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--fill);color:var(--label2);white-space:nowrap}
+.tag.on{background:color-mix(in srgb,var(--tint) 14%,transparent);color:var(--tint)}
+
+@media (max-width:640px){ .largetitle{font-size:28px} }
+@media (prefers-reduced-motion:reduce){ .cbtn{transition:none} }

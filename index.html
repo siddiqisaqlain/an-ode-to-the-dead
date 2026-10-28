@@ -8,39 +8,40 @@
 <meta name="copyright" content="© 2026 Saqlain Siddiqi. All rights reserved.">
 <title>An Ode to the Dead</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="assets/site.css">
 <style>
 /* Sites: the three graveyards, each a card listing its zones */
-main{max-width:1080px;margin:0 auto;padding:48px max(16px,env(safe-area-inset-left,0px)) 64px}
-.intro{max-width:640px;margin-bottom:36px}
-.intro small{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.intro h2{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,5vw,40px);line-height:1.15;margin:6px 0 12px;text-wrap:balance}
-.intro p{margin:0;color:var(--muted)}
+main{max-width:1080px;margin:0 auto;padding:calc(48px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-left,0px)) 64px}
+.intro{max-width:680px;margin-bottom:32px}
+.eyebrow{font-size:15px;font-weight:600;color:var(--mark);margin:0 0 6px}
+.intro h1{font-family:var(--f-display);font-weight:700;font-size:clamp(34px,6vw,52px);line-height:1.06;letter-spacing:-.03em;margin:0 0 14px;text-wrap:balance}
+.intro p{margin:0;font-size:17px;line-height:1.45;color:var(--label2)}
 .sites{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;list-style:none;margin:0;padding:0}
-.site{display:flex;flex-direction:column;gap:14px;padding:20px;border:1px solid var(--line);border-radius:10px;background:var(--surface);text-decoration:none;transition:border-color .15s,transform .15s}
-.site:hover{border-color:var(--accent);transform:translateY(-2px)}
-.site .num{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;color:var(--muted)}
-.site h3{font-family:var(--f-display);font-weight:400;font-size:24px;line-height:1.2;margin:0}
-.site .place{color:var(--muted);font-size:14px;margin-top:2px}
+.site{display:flex;flex-direction:column;gap:16px;height:100%;padding:22px;border-radius:22px;background:var(--card);box-shadow:var(--shadow);text-decoration:none;
+  transition:transform .3s var(--ease),box-shadow .3s var(--ease)}
+.site:hover{transform:translateY(-3px) scale(1.01)}
+.site:active{transform:scale(.99)}
+.site .num{font-size:13px;font-weight:600;color:var(--label2)}
+.site h2{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1.12;letter-spacing:-.025em;margin:0}
+.site .place{color:var(--label2);font-size:15px;margin-top:4px}
 .zones{display:flex;flex-wrap:wrap;gap:6px}
-.zones span{display:grid;place-items:center;min-width:28px;height:28px;padding:0 6px;border:1px solid var(--line);border-radius:5px;font-family:var(--f-mono);font-size:12px}
-.zones span.has{border-color:var(--accent);color:var(--accent)}
-.site .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
-.site .go{color:var(--accent);font-weight:500}
-.featured{margin-top:28px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:14px;color:var(--muted)}
-footer{border-top:1px solid var(--line);padding:20px max(16px,env(safe-area-inset-left,0px));font-size:12.5px;color:var(--muted);text-align:center}
-@media (prefers-reduced-motion:reduce){.site{transition:none}.site:hover{transform:none}}
+.zones span{display:grid;place-items:center;min-width:32px;height:32px;padding:0 8px;border-radius:999px;background:var(--fill);font-size:14px;font-weight:600;color:var(--label2)}
+.zones span.has{background:color-mix(in srgb,var(--tint) 14%,transparent);color:var(--tint)}
+.site .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px;color:var(--label2)}
+.site .go{color:var(--tint);font-weight:600;white-space:nowrap}
+.featured{margin-top:28px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-size:15px}
+.featured a{color:var(--tint);text-decoration:none}
+.featured a:hover{text-decoration:underline}
+footer{padding:24px max(16px,env(safe-area-inset-left,0px)) calc(24px + env(safe-area-inset-bottom,0px));font-size:13px;color:var(--label2);text-align:center}
+@media (prefers-reduced-motion:reduce){.site{transition:none}.site:hover,.site:active{transform:none}}
 </style>
 </head>
 <body>
-<header class="bar">
-  <div class="brand"><ol class="crumbs"><li>Heritage documentation</li></ol><h1>An Ode to the Dead</h1></div>
-</header>
 <main>
   <section class="intro">
-    <small>Three historical graveyards of Kashmir</small>
-    <h2>Choose a graveyard to walk its zones and graves</h2>
+    <p class="eyebrow">Three historical graveyards of Kashmir</p>
+    <h1>An Ode to the Dead</h1>
     <p id="credit"></p>
   </section>
   <ul class="sites" id="sites"></ul>
@@ -58,9 +59,9 @@ footer{border-top:1px solid var(--line);padding:20px max(16px,env(safe-area-inse
     const recorded = s.zones.reduce((a, z) => a + z.graves.filter(Archive.hasRecord).length, 0);
     return `<li><a class="site" href="${Archive.siteURL(s)}">
       <span class="num">SITE ${String(i + 1).padStart(2, '0')}</span>
-      <div><h3>${esc(s.name)}</h3><div class="place">${esc(s.place)}</div></div>
+      <div><h2>${esc(s.name)}</h2><div class="place">${esc(s.place)}</div></div>
       <div class="zones" aria-label="Zones">${s.zones.map(z => `<span class="${z.graves.length ? 'has' : ''}" title="Zone ${z.id}">${z.id}</span>`).join('')}</div>
-      <div class="foot"><span>${s.zones.length} zone${s.zones.length > 1 ? 's' : ''} · ${graves ? `${graves} graves mapped, ${recorded} recorded` : 'plans to come'}</span><span class="go">Open →</span></div>
+      <div class="foot"><span>${s.zones.length} zone${s.zones.length > 1 ? 's' : ''} · ${graves ? `${graves} graves · ${recorded} recorded` : 'plans to come'}</span><span class="go">Open →</span></div>
     </a></li>`;
   }).join('');
 })();
