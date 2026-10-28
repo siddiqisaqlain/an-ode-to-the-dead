@@ -1,4 +1,4 @@
-# Graveyard Record Viewer
+# An Ode to the Dead
 
 An interactive 3D record of a historic grave, built as part of *Documentation and Conservation of Three Historical Graveyards of Kashmir* (Islamic University of Science and Technology, Awantipora; funded by The Barakat Trust, UK).
 
