@@ -160,7 +160,7 @@ window.ARCHIVE = {
       ]
     },
     /* Madeen Sahab: one zone; 37 graves numbered on its zone map */
-    { id: 'madeen-sahab', name: 'Madeen Sahab', place: 'Srinagar', zones: [{
+    { id: 'madeen-sahab', name: 'Madeen Sahab', place: 'Srinagar', lat: 34.116972, lng: 74.810094, approx: 'Madin Sahib mosque (Wikipedia); to confirm against the survey', zones: [{
         id: 'A', count: 37, source: 'the Madeen Sahab zone map', map: 'zone-maps/madeen-sahab/zone-map.png',
         boundary: [[0.0,0.0], [34.78,0.0], [34.78,14.82], [24.16,14.59], [20.64,13.86], [14.88,13.28], [11.68,13.22], [4.64,12.74], [0.0,12.74]], features: [{ label: 'Building', x: 3.01, z: 7.5, w: 3.78, d: 4.26 }],
         graves: [
@@ -203,7 +203,7 @@ window.ARCHIVE = {
           { n: 37, plan: { x: 33.34, z: 10.02, w: 0.64, d: 1.66 } }
         ]
       }] },
-    { id: 'anderkote-sumbal', name: 'Anderkote, Sumbal', place: 'Ganderbal', zones: [{ id: 'A', graves: [] }, { id: 'B', graves: [] }, { id: 'C', graves: [] }] }
+    { id: 'anderkote-sumbal', name: 'Anderkote, Sumbal', place: 'Ganderbal', lat: 34.230705, lng: 74.647308, approx: 'Sumbal town; to replace with the graveyard\'s surveyed coordinates', zones: [{ id: 'A', graves: [] }, { id: 'B', graves: [] }, { id: 'C', graves: [] }] }
   ]
 };
 

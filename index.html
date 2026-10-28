@@ -8,62 +8,348 @@
 <meta name="copyright" content="© 2026 Saqlain Siddiqi. All rights reserved.">
 <title>An Ode to the Dead</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
 <link rel="stylesheet" href="assets/site.css">
 <style>
-/* Sites: the three graveyards, each a card listing its zones */
-main{max-width:1080px;margin:0 auto;padding:calc(48px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-left,0px)) 64px}
-.intro{max-width:680px;margin-bottom:32px}
-.eyebrow{font-size:15px;font-weight:600;color:var(--mark);margin:0 0 6px}
-.intro h1{font-family:var(--f-display);font-weight:700;font-size:clamp(34px,6vw,52px);line-height:1.06;letter-spacing:-.03em;margin:0 0 14px;text-wrap:balance}
-.intro p{margin:0;font-size:17px;line-height:1.45;color:var(--label2)}
-.sites{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;list-style:none;margin:0;padding:0}
-.site{display:flex;flex-direction:column;gap:16px;height:100%;padding:22px;border-radius:22px;background:var(--card);box-shadow:var(--shadow);text-decoration:none;
-  transition:transform .3s var(--ease),box-shadow .3s var(--ease)}
-.site:hover{transform:translateY(-3px) scale(1.01)}
-.site:active{transform:scale(.99)}
-.site .num{font-size:13px;font-weight:600;color:var(--label2)}
-.site h2{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1.12;letter-spacing:-.025em;margin:0}
-.site .place{color:var(--label2);font-size:15px;margin-top:4px}
-.zones{display:flex;flex-wrap:wrap;gap:6px}
-.zones span{display:grid;place-items:center;min-width:32px;height:32px;padding:0 8px;border-radius:999px;background:var(--fill);font-size:14px;font-weight:600;color:var(--label2)}
-.zones span.has{background:color-mix(in srgb,var(--tint) 14%,transparent);color:var(--tint)}
-.site .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px;color:var(--label2)}
-.site .go{color:var(--tint);font-weight:600;white-space:nowrap}
-.featured{margin-top:28px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-size:15px}
-.featured a{color:var(--tint);text-decoration:none}
-.featured a:hover{text-decoration:underline}
-footer{padding:24px max(16px,env(safe-area-inset-left,0px)) calc(24px + env(safe-area-inset-bottom,0px));font-size:13px;color:var(--label2);text-align:center}
-@media (prefers-reduced-motion:reduce){.site{transition:none}.site:hover,.site:active{transform:none}}
+/* Front page: a site key plan. The valley as a 3D massing model fills the screen; the title and site index float on the left,
+   a drawing-sheet frame with north point, coordinates and title block sits around it. */
+:root{
+  --paper:#ecebe6; --paper2:#e2e0d8; --ink:#1d1d1f; --ink2:#6e6e73; --rule:rgba(29,29,31,.16);
+  --f-mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){ --paper:#141518; --paper2:#0d0e10; --ink:#f5f5f7; --ink2:#98989d; --rule:rgba(245,245,247,.14) }}
+:root[data-theme="dark"]{ --paper:#141518; --paper2:#0d0e10; --ink:#f5f5f7; --ink2:#98989d; --rule:rgba(245,245,247,.14) }
+
+body{overflow:hidden;background:var(--paper)}
+#map{position:fixed;inset:0;background:radial-gradient(ellipse 80% 70% at 60% 50%, var(--paper) 0%, var(--paper2) 100%)}
+.veil{position:fixed;inset:0;z-index:2;background:var(--paper);pointer-events:none;transition:opacity 1.6s var(--ease)}
+body.ready .veil{opacity:0}
+
+/* a paper fade behind the left column, so the title and index read over the map */
+.fade{position:fixed;z-index:1;top:0;bottom:0;left:0;width:min(640px,60vw);pointer-events:none;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--paper) 88%,transparent) 0%,color-mix(in srgb,var(--paper) 55%,transparent) 55%,transparent 100%)}
+@media (max-width:760px){.fade{width:100%;background:linear-gradient(180deg,color-mix(in srgb,var(--paper) 85%,transparent) 0%,transparent 34%,transparent 60%,color-mix(in srgb,var(--paper) 80%,transparent) 100%)}}
+
+/* drawing-sheet frame */
+.frame{position:fixed;z-index:3;inset:max(12px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));
+  border:.5px solid var(--rule);pointer-events:none;opacity:0;transition:opacity 1.2s var(--ease) .4s}
+.frame::before,.frame::after{content:"";position:absolute;width:14px;height:14px;border:solid var(--ink);opacity:.5}
+.frame::before{left:-1px;top:-1px;border-width:1.5px 0 0 1.5px}
+.frame::after{right:-1px;bottom:-1px;border-width:0 1.5px 1.5px 0}
+body.ready .frame{opacity:1}
+
+/* left: title and site index */
+.panel{position:fixed;z-index:4;top:max(40px,calc(env(safe-area-inset-top,0px) + 28px));left:max(40px,calc(env(safe-area-inset-left,0px) + 28px));bottom:40px;width:min(400px,calc(100% - 80px));
+  display:flex;flex-direction:column;gap:28px;pointer-events:none}
+.panel > *{pointer-events:auto}
+.eyebrow{display:flex;align-items:center;gap:10px;font-family:var(--f-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink2);margin:0 0 18px}
+.eyebrow::before{content:"";width:28px;height:1px;background:currentColor}
+h1{font-family:var(--f-display);font-weight:600;font-size:clamp(40px,5.2vw,64px);line-height:.98;letter-spacing:-.035em;margin:0;color:var(--ink)}
+h1 span{display:block}
+h1 em{font-style:normal;font-weight:300;color:var(--ink2)}
+.lede{margin:18px 0 0;font-size:15px;line-height:1.5;color:var(--ink2);max-width:34ch}
+.reveal{opacity:0;transform:translateY(18px);filter:blur(8px);transition:opacity 1.1s var(--ease),transform 1.1s var(--ease),filter 1.1s var(--ease)}
+body.ready .reveal{opacity:1;transform:none;filter:none}
+body.ready .reveal.d1{transition-delay:.25s} body.ready .reveal.d2{transition-delay:.4s} body.ready .reveal.d3{transition-delay:.6s}
+
+.index{margin:auto 0 0;display:flex;flex-direction:column;gap:10px;list-style:none;padding:0}
+.index li{opacity:0;transform:translateX(-24px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+body.landed .index li{opacity:1;transform:none}
+body.landed .index li:nth-child(2){transition-delay:.12s} body.landed .index li:nth-child(3){transition-delay:.24s}
+.card{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;align-items:start;width:100%;text-align:left;padding:16px 18px;border-radius:18px;cursor:pointer;
+  color:var(--label);transition:transform .35s var(--ease),background .3s,box-shadow .3s}
+.card:hover{transform:translateX(4px)}
+.card .no{grid-row:1/4;font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;color:var(--mark);padding-top:3px}
+.card h2{margin:0;font-family:var(--f-display);font-size:19px;font-weight:600;letter-spacing:-.02em;line-height:1.2}
+.card .meta{font-size:13px;color:var(--label2)}
+.card .coord{font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--label2);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+.card .coord i{font-style:normal;color:var(--label3)}
+.card .go{grid-column:2;display:none;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding-top:12px;border-top:.5px solid var(--hair)}
+.card .go a{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 16px;border-radius:999px;background:var(--tint);color:var(--tint-ink);text-decoration:none;font-size:14px;font-weight:600;white-space:nowrap}
+.card .go a:hover{background:color-mix(in srgb,var(--tint) 88%,#000)}
+.card .go small{font-size:12px;color:var(--label2)}
+.card.on{background:var(--glass-strong)}
+.card.on .go{display:flex}
+.foot{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink2);margin:0}
+.foot a{color:var(--tint);text-decoration:none}
+.foot a:hover{text-decoration:underline}
+
+/* site markers: a dimension-style leader with a tag */
+.sm{display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.sm > *{opacity:0;transform:translateY(10px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
+body.landed .sm > *{opacity:1;transform:none}
+.sm-tag{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;white-space:nowrap;font-size:13px;font-weight:600;letter-spacing:-.01em;color:var(--label)}
+.sm-tag b{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--paper);font-family:var(--f-mono);font-size:10.5px;font-weight:500;transition:background .3s}
+.sm-stem{width:1px;height:var(--stem,46px);background:linear-gradient(var(--ink),color-mix(in srgb,var(--ink) 15%,transparent))}
+.sm-dot{width:9px;height:9px;margin-top:-4px;border-radius:50%;background:var(--mark);box-shadow:0 0 0 3px color-mix(in srgb,var(--mark) 30%,transparent)}
+body.landed .sm:hover .sm-tag,body.landed .sm.hot .sm-tag{transform:translateY(-3px)}
+.sm:hover .sm-tag b,.sm.hot .sm-tag b{background:var(--mark);color:#fff}
+body.landed .sm.dim > *{opacity:.3}
+
+/* bottom right: title block and north point */
+.hud{position:fixed;z-index:4;right:max(40px,calc(env(safe-area-inset-right,0px) + 28px));bottom:40px;display:flex;align-items:flex-end;gap:12px;pointer-events:none;
+  opacity:0;transition:opacity 1s var(--ease) .6s}
+body.ready .hud{opacity:1}
+.north{width:52px;height:52px;border-radius:50%;display:grid;place-items:center}
+.north svg{width:34px;height:34px;overflow:visible}
+.tblock{display:grid;grid-template-columns:auto auto;border-radius:12px;overflow:hidden;font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2)}
+.tblock div{padding:7px 12px;border-bottom:.5px solid var(--rule)}
+.tblock div:nth-child(odd){border-right:.5px solid var(--rule)}
+.tblock div:nth-last-child(-n+2){border-bottom:0}
+.tblock b{display:block;font-weight:500;color:var(--ink);font-size:11.5px;letter-spacing:.02em;text-transform:none;font-variant-numeric:tabular-nums;white-space:nowrap}
+.backall{position:fixed;z-index:4;top:max(40px,calc(env(safe-area-inset-top,0px) + 28px));right:max(40px,calc(env(safe-area-inset-right,0px) + 28px));
+  opacity:0;pointer-events:none;transform:translateY(-8px);transition:opacity .4s var(--ease),transform .4s var(--ease)}
+body.focused .backall{opacity:1;pointer-events:auto;transform:none}
+
+/* map controls and attribution, quietened */
+.maplibregl-ctrl-scale{background:transparent;border-color:var(--ink2);color:var(--ink2);font-family:var(--f-mono);font-size:10px;letter-spacing:.04em}
+.maplibregl-ctrl-attrib{background:var(--glass)!important;color:var(--ink2)!important;font-size:10px}
+.maplibregl-ctrl-attrib a{color:var(--ink2)!important}
+.maplibregl-ctrl-bottom-right{bottom:112px;right:max(40px,calc(env(safe-area-inset-right,0px) + 28px));display:flex;flex-direction:column;align-items:flex-end}
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl{margin:0 0 8px}
+
+/* no WebGL, or the map failed: the page still works as an index */
+body.nomap .frame,body.nomap .hud{display:none}
+body.nomap .index li,body.nomap .reveal{opacity:1;transform:none;filter:none}
+
+@media (max-width:760px){
+  .panel{left:20px;right:20px;width:auto;top:max(28px,calc(env(safe-area-inset-top,0px) + 20px));bottom:max(20px,env(safe-area-inset-bottom,0px));gap:16px}
+  h1{font-size:38px}
+  .eyebrow{font-size:10px;letter-spacing:.1em;margin-right:64px}
+  .lede,.foot{display:none}
+  .index{flex-direction:row;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;margin:auto -20px 0;padding:0 20px 4px;scrollbar-width:none}
+  .index::-webkit-scrollbar{display:none}
+  .index li{flex:0 0 84%;scroll-snap-align:center}
+  .card{height:100%}
+  .card:hover{transform:none}
+  .hud{top:max(28px,calc(env(safe-area-inset-top,0px) + 20px));bottom:auto;right:20px}
+  .tblock,.maplibregl-ctrl-scale{display:none}
+  .maplibregl-ctrl-bottom-right{bottom:auto;top:96px;right:20px}
+  .backall{top:auto;bottom:calc(max(20px,env(safe-area-inset-bottom,0px)) + 210px);right:20px}
+}
+@media (prefers-reduced-motion:reduce){
+  .veil,.frame,.reveal,.index li,.sm > *,.card,.hud,.backall{transition:none!important}
+}
 </style>
 </head>
 <body>
-<main>
-  <section class="intro">
-    <p class="eyebrow">Three historical graveyards of Kashmir</p>
-    <h1>An Ode to the Dead</h1>
-    <p id="credit"></p>
-  </section>
-  <ul class="sites" id="sites"></ul>
-  <p class="featured"><span class="tag on">Test record</span><a href="grave.html?site=imambargah-hassanabad&amp;zone=G&amp;grave=2">Grave 2, Zone G, Imambargah, Hassanabad: 3D scan, Sheet 61 and photograph</a></p>
-</main>
-<footer>© 2026 Saqlain Siddiqi. All rights reserved. Private, shared only with invited people.</footer>
+<div id="map" aria-label="3D map of the Kashmir valley showing the three graveyards"></div>
+<div class="fade"></div>
+<div class="veil"></div>
+<div class="frame" aria-hidden="true"></div>
 
+<section class="panel">
+  <header>
+    <p class="eyebrow reveal">Heritage documentation · Kashmir</p>
+    <h1 class="reveal d1"><span>An Ode</span><span><em>to the</em> Dead</span></h1>
+    <p class="lede reveal d2" id="lede"></p>
+  </header>
+  <ol class="index" id="index" aria-label="The three graveyards"></ol>
+  <p class="foot reveal d3"><a href="grave.html?site=imambargah-hassanabad&amp;zone=G&amp;grave=2">Test record: Grave 2, Zone G →</a><span>© 2026 Saqlain Siddiqi. All rights reserved.</span></p>
+</section>
+
+<button class="cbtn glass backall" id="backAll" type="button">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5v4.5h4.5"/></svg>All sites
+</button>
+
+<div class="hud" aria-hidden="true">
+  <div class="tblock glass">
+    <div>Drawing<b>Site key plan</b></div><div>Sites<b>3</b></div>
+    <div>Centre<b id="tbCoord">–</b></div><div>View<b id="tbPitch">Plan</b></div>
+  </div>
+  <div class="north glass"><svg id="needle" viewBox="0 0 34 34"><path d="M17 4 21.5 17h-9Z" fill="var(--ink)"/><path d="M17 30 21.5 17h-9Z" fill="none" stroke="var(--ink)" stroke-width="1"/></svg></div>
+</div>
+
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 <script src="assets/archive.js"></script>
 <script>
 (function(){
-  document.getElementById('credit').textContent = `${ARCHIVE.project}. ${ARCHIVE.institution}. Funded by ${ARCHIVE.funder}.`;
-  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  document.getElementById('sites').innerHTML = ARCHIVE.sites.map((s, i) => {
-    const graves = s.zones.reduce((a, z) => a + z.graves.length, 0);
-    const recorded = s.zones.reduce((a, z) => a + z.graves.filter(Archive.hasRecord).length, 0);
-    return `<li><a class="site" href="${Archive.siteURL(s)}">
-      <span class="num">SITE ${String(i + 1).padStart(2, '0')}</span>
-      <div><h2>${esc(s.name)}</h2><div class="place">${esc(s.place)}</div></div>
-      <div class="zones" aria-label="Zones">${s.zones.map(z => `<span class="${z.graves.length ? 'has' : ''}" title="Zone ${z.id}">${z.id}</span>`).join('')}</div>
-      <div class="foot"><span>${s.zones.length} zone${s.zones.length > 1 ? 's' : ''} · ${graves ? `${graves} graves · ${recorded} recorded` : 'plans to come'}</span><span class="go">Open →</span></div>
-    </a></li>`;
-  }).join('');
+const $ = id => document.getElementById(id);
+const theme = new URLSearchParams(location.search).get('theme');   // ?theme=light or dark, to preview either
+if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const mobile = () => innerWidth <= 760;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmt = (lat, lng, d = 4) => `${Math.abs(lat).toFixed(d)}° ${lat >= 0 ? 'N' : 'S'}  ${Math.abs(lng).toFixed(d)}° ${lng >= 0 ? 'E' : 'W'}`;
+$('lede').textContent = `${ARCHIVE.project}. ${ARCHIVE.institution}, funded by ${ARCHIVE.funder}.`;
+
+/* ---------- site index ---------- */
+const sites = ARCHIVE.sites.filter(s => s.lat);
+$('index').innerHTML = sites.map((s, i) => {
+  const graves = s.zones.reduce((a, z) => a + z.graves.length, 0), traced = s.zones.filter(z => !z.template).length;
+  return `<li><div class="card glass" role="button" tabindex="0" data-i="${i}" aria-label="Show ${esc(s.name)} on the map">
+    <span class="no">${String(i + 1).padStart(2, '0')}</span>
+    <h2>${esc(s.name)}</h2>
+    <span class="meta">${esc(s.place)} · ${s.zones.length} zone${s.zones.length > 1 ? 's' : ''}${graves ? ` · ${graves} graves` : ''}</span>
+    <span class="coord">${fmt(s.lat, s.lng)}${s.approx ? `<i title="${esc(s.approx)}">approx.</i>` : ''}</span>
+    <div class="go"><small>${traced ? `${traced} zone plan${traced > 1 ? 's' : ''} traced` : 'Zone plans to come'}</small><a href="${Archive.siteURL(s)}">Enter site <span aria-hidden="true">→</span></a></div>
+  </div></li>`;
+}).join('');
+const cards = [...document.querySelectorAll('.card')];
+
+/* ---------- the map: the valley as a massing model ---------- */
+function palette(){
+  const t = document.documentElement.dataset.theme;
+  const dark = t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+  return dark
+    ? { land:'#18191c', green:'#1a1f1b', water:'#1c2a31', waterLine:'#33474f', road:'#2e3035', roadMajor:'#45474e', bld:'#cfccc4', bldTop:'#ecebe6',
+        label:'#8e8e93', halo:'#18191c', shade:'#000000', hi:'#34363b', sky:'#0d0e10', horizon:'#26282d', mark:'#ff9f0a' }
+    : { land:'#ecebe6', green:'#e1e3d6', water:'#c6d2d5', waterLine:'#a9b9be', road:'#ffffff', roadMajor:'#ffffff', bld:'#f8f7f3', bldTop:'#ffffff',
+        label:'#7c7b76', halo:'#ecebe6', shade:'#5d5a52', hi:'#ffffff', sky:'#dde2e5', horizon:'#f2f0ea', mark:'#ff9500' };
+}
+const DEM = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+function style(c){
+  const roads = (id, cls, w0, w1, color) => ({ id, type: 'line', source: 'omt', 'source-layer': 'transportation',
+    filter: ['in', ['get', 'class'], ['literal', cls]], layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': color, 'line-width': ['interpolate', ['exponential', 1.6], ['zoom'], 9, w0, 18, w1] } });
+  return {
+    version: 8,
+    glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+    sources: {
+      omt: { type: 'vector', url: 'https://tiles.openfreemap.org/planet',
+             attribution: '<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>' },
+      dem: { type: 'raster-dem', encoding: 'terrarium', tileSize: 256, maxzoom: 14, tiles: [DEM], attribution: 'Terrain: Mapzen, AWS Open Data' },
+      shade: { type: 'raster-dem', encoding: 'terrarium', tileSize: 256, maxzoom: 14, tiles: [DEM] }
+    },
+    terrain: { source: 'dem', exaggeration: 1.35 },
+    sky: { 'sky-color': c.sky, 'horizon-color': c.horizon, 'fog-color': c.horizon, 'sky-horizon-blend': .6, 'horizon-fog-blend': .7, 'fog-ground-blend': .35, 'atmosphere-blend': 0 },
+    layers: [
+      { id: 'bg', type: 'background', paint: { 'background-color': c.land } },
+      { id: 'green', type: 'fill', source: 'omt', 'source-layer': 'landcover', filter: ['in', ['get', 'class'], ['literal', ['grass', 'wood', 'farmland']]],
+        paint: { 'fill-color': c.green, 'fill-opacity': .7 } },
+      { id: 'hillshade', type: 'hillshade', source: 'shade',
+        paint: { 'hillshade-exaggeration': .42, 'hillshade-shadow-color': c.shade, 'hillshade-highlight-color': c.hi, 'hillshade-accent-color': c.shade, 'hillshade-illumination-direction': 315 } },
+      { id: 'water', type: 'fill', source: 'omt', 'source-layer': 'water', paint: { 'fill-color': c.water } },
+      { id: 'water-edge', type: 'line', source: 'omt', 'source-layer': 'water', paint: { 'line-color': c.waterLine, 'line-width': .6 } },
+      { id: 'waterway', type: 'line', source: 'omt', 'source-layer': 'waterway', paint: { 'line-color': c.water, 'line-width': ['interpolate', ['linear'], ['zoom'], 8, .6, 16, 4] } },
+      roads('road-minor', ['minor', 'service', 'track', 'path'], .2, 5, c.road),
+      roads('road-mid', ['tertiary', 'secondary'], .4, 9, c.roadMajor),
+      roads('road-major', ['primary', 'trunk', 'motorway'], .7, 13, c.roadMajor),
+      { id: 'buildings', type: 'fill-extrusion', source: 'omt', 'source-layer': 'building', minzoom: 13,
+        paint: { 'fill-extrusion-color': ['interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 6], 0, c.bld, 20, c.bldTop],
+                 'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 13, 0, 14.5, ['coalesce', ['get', 'render_height'], 6]],
+                 'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+                 'fill-extrusion-opacity': .92, 'fill-extrusion-vertical-gradient': true } },
+      { id: 'water-names', type: 'symbol', source: 'omt', 'source-layer': 'water_name', minzoom: 10,
+        layout: { 'text-field': ['coalesce', ['get', 'name:en'], ['get', 'name']], 'text-font': ['Noto Sans Italic'], 'text-size': 11, 'text-letter-spacing': .12 },
+        paint: { 'text-color': c.waterLine, 'text-halo-color': c.halo, 'text-halo-width': 1 } },
+      { id: 'places', type: 'symbol', source: 'omt', 'source-layer': 'place',
+        filter: ['any', ['in', ['get', 'class'], ['literal', ['city', 'town']]],
+                 ['all', ['in', ['get', 'class'], ['literal', ['suburb', 'village']]], ['>=', ['zoom'], 12.5]]],
+        layout: { 'text-field': ['upcase', ['coalesce', ['get', 'name:en'], ['get', 'name']]], 'text-font': ['Noto Sans Regular'],
+                  'text-size': ['match', ['get', 'class'], 'city', 12, 10], 'text-letter-spacing': .22, 'text-max-width': 12 },
+        paint: { 'text-color': c.label, 'text-halo-color': c.halo, 'text-halo-width': 1.2, 'text-opacity': .85 } }
+    ]
+  };
+}
+
+const VALLEY = { center: [74.74, 34.16], zoom: 8.3, pitch: 0, bearing: 0 };
+let map;
+try {
+  map = new maplibregl.Map({ container: 'map', style: style(palette()), ...VALLEY, maxPitch: 75, attributionControl: { compact: true },
+    canvasContextAttributes: { antialias: true } });
+} catch (e) { document.body.classList.add('nomap', 'ready', 'landed'); return; }
+map.addControl(new maplibregl.ScaleControl({ maxWidth: 110, unit: 'metric' }), 'bottom-right');
+const failTimer = setTimeout(() => { if (!map.loaded()) document.body.classList.add('nomap', 'ready', 'landed'); }, 12000);
+
+/* site highlights: a soft disc on the ground at each site, with a ring breathing outward */
+const STOPS = [[8, 7], [12, 16], [14, 22], [16, 50], [18, 200]];   // px; from z16 up this is about 100 m on the ground
+const radius = k => ['interpolate', ['exponential', 2], ['zoom'], ...STOPS.flatMap(([z, r]) => [z, r * k])];
+const R = radius(1);
+function addSiteLayers(){
+  const c = palette();
+  map.addSource('sites', { type: 'geojson', data: { type: 'FeatureCollection',
+    features: sites.map((s, i) => ({ type: 'Feature', properties: { i }, geometry: { type: 'Point', coordinates: [s.lng, s.lat] } })) } });
+  map.addLayer({ id: 'site-disc', type: 'circle', source: 'sites',
+    paint: { 'circle-radius': R, 'circle-color': c.mark, 'circle-opacity': .16, 'circle-blur': .5, 'circle-pitch-alignment': 'map' } });
+  map.addLayer({ id: 'site-ring', type: 'circle', source: 'sites',
+    paint: { 'circle-radius': R, 'circle-color': 'rgba(0,0,0,0)', 'circle-stroke-color': c.mark, 'circle-stroke-width': 1.2, 'circle-stroke-opacity': .8, 'circle-pitch-alignment': 'map' } });
+}
+function pulse(now){
+  if (!map.getLayer('site-ring')) return;
+  const t = (now % 2600) / 2600;
+  map.setPaintProperty('site-ring', 'circle-radius', radius(1 + t));
+  map.setPaintProperty('site-ring', 'circle-stroke-opacity', .85 * (1 - t));
+  requestAnimationFrame(pulse);
+}
+
+/* markers: a leader line rising from the site to a numbered tag; Madeen Sahab sits 2 km from Hassanabad, so its leader is taller */
+const STEMS = [46, 104, 46];
+const markers = sites.map((s, i) => {
+  const el = document.createElement('div'); el.className = 'sm'; el.style.setProperty('--stem', (STEMS[i] || 46) + 'px');
+  el.innerHTML = `<div class="sm-tag glass"><b>${String(i + 1).padStart(2, '0')}</b>${esc(s.name)}</div><i class="sm-stem"></i><i class="sm-dot"></i>`;
+  [...el.children].forEach((c, k) => c.style.transitionDelay = (.18 * i + .08 * (2 - k)) + 's');
+  el.addEventListener('click', e => { e.stopPropagation(); focus(i); });
+  el.addEventListener('mouseenter', () => hot(i)); el.addEventListener('mouseleave', () => hot(null));
+  return new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([s.lng, s.lat]).addTo(map);
+});
+function hot(i){ markers.forEach((m, j) => m.getElement().classList.toggle('hot', j === i)); }
+
+/* camera: the overview frames the three sites; focusing flies low over one */
+function overview(){
+  const b = new maplibregl.LngLatBounds(); sites.forEach(s => b.extend([s.lng, s.lat]));
+  const pad = mobile() ? { top: 150, bottom: 260, left: 40, right: 40 } : { top: 160, bottom: 160, left: Math.min(500, innerWidth * .38), right: 160 };
+  const cam = map.cameraForBounds(b, { padding: pad, bearing: -22 }) || { center: VALLEY.center, zoom: 10 };
+  return { center: cam.center, zoom: cam.zoom - .2, bearing: -22, pitch: 56 };
+}
+const FOCUS = [{ bearing: -32, pitch: 62, zoom: 15.9 }, { bearing: 28, pitch: 60, zoom: 15.9 }, { bearing: -12, pitch: 58, zoom: 14.6 }];
+let focused = -1;
+function focus(i){
+  focused = i; stopOrbit();
+  cards.forEach((c, j) => c.classList.toggle('on', j === i));
+  markers.forEach((m, j) => m.getElement().classList.toggle('dim', j !== i));
+  document.body.classList.add('focused');
+  const s = sites[i], f = FOCUS[i] || FOCUS[0];
+  map.flyTo({ center: [s.lng, s.lat], zoom: f.zoom, pitch: f.pitch, bearing: f.bearing, offset: mobile() ? [0, -90] : [Math.min(200, innerWidth * .16), 40],
+    duration: reduced ? 0 : 3400, curve: 1.5, essential: true });
+  if (mobile()) cards[i].scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', inline: 'center', block: 'nearest' });
+}
+function showAll(){
+  focused = -1; cards.forEach(c => c.classList.remove('on')); markers.forEach(m => m.getElement().classList.remove('dim'));
+  document.body.classList.remove('focused');
+  map.flyTo({ ...overview(), duration: reduced ? 0 : 2800, curve: 1.3, essential: true });
+  map.once('moveend', () => setTimeout(startOrbit, 600));
+}
+cards.forEach((c, i) => {
+  c.addEventListener('click', e => { if (!e.target.closest('a') && focused !== i) focus(i); });
+  c.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('a')) { e.preventDefault(); focus(i); } });
+  c.addEventListener('mouseenter', () => hot(i)); c.addEventListener('mouseleave', () => hot(null));
+});
+$('backAll').addEventListener('click', showAll);
+addEventListener('keydown', e => { if (e.key === 'Escape' && focused >= 0) showAll(); });
+
+/* a slow drift around the overview until someone takes the controls */
+let orbiting = false, last = 0;
+function startOrbit(){ if (reduced || focused >= 0 || orbiting) return; orbiting = true; last = performance.now(); requestAnimationFrame(orbit); }
+function stopOrbit(){ orbiting = false; }
+function orbit(now){
+  if (!orbiting) return;
+  const dt = Math.min(now - last, 64); last = now;
+  map.setBearing(map.getBearing() + dt * .0022); requestAnimationFrame(orbit);
+}
+['mousedown', 'touchstart', 'wheel'].forEach(t => map.getCanvas().addEventListener(t, stopOrbit, { passive: true }));
+
+/* live readouts: centre coordinates, view angle, north point */
+function readout(){
+  const c = map.getCenter(), p = Math.round(map.getPitch());
+  $('tbCoord').textContent = fmt(c.lat, c.lng, 3);
+  $('tbPitch').textContent = p < 2 ? 'Plan' : `${p}° oblique`;
+  $('needle').style.transform = `rotate(${-map.getBearing()}deg)`;
+}
+map.on('move', readout);
+
+/* the opening: the veil lifts on the valley in plan, then the camera sweeps down to frame the sites */
+map.on('load', () => {
+  clearTimeout(failTimer); addSiteLayers(); readout();
+  document.querySelectorAll('.maplibregl-ctrl-attrib').forEach(a => a.classList.remove('maplibregl-compact-show'));
+  document.body.classList.add('ready');
+  if (!reduced) requestAnimationFrame(pulse);
+  setTimeout(() => {
+    map.flyTo({ ...overview(), duration: reduced ? 0 : 5600, curve: 1.42, essential: true });
+    map.once('moveend', () => { document.body.classList.add('landed'); setTimeout(startOrbit, 900); });
+  }, reduced ? 0 : 1100);
+});
 })();
 </script>
 </body>
