@@ -123,7 +123,7 @@ window.ARCHIVE = {
             {
               n: 2, plan: { x: 4.16, z: 5.51, w: 0.49, d: 0.11 }, kind: 'headstone', height: 0.73,
               sheet: '61', scale: '1:10', lat: 34.102778, lng: 74.830606,
-              scan: { src: 'scan/scan.json', groundNormal: [0.1142, 0.9896, -0.0875] },   // levels the 8° tilt in the scan's ground
+              scan: { src: 'scan/scan.json', parts: ['scan/scan.bin', 'scan/scan-texture.jpg'], groundNormal: [0.1142, 0.9896, -0.0875] },   // levels the 8° tilt in the scan's ground
               files: {
                 cad: [],
                 pdfs: { final: { src: 'pdfs/sheet-61-final.png', title: 'Sheet 61 · final' }, revisions: [] },
@@ -220,6 +220,8 @@ window.Archive = {
   siteURL: (site, zone) => `site.html?site=${site.id}` + (zone ? `&zone=${zone.id}` : ''),
   graveURL: (site, zone, g) => `grave.html?site=${site.id}&zone=${zone.id}&grave=${g.n}`,
   hasRecord: g => !!(g.scan || g.files),
+  // a scan's files (the glTF, its binary buffer and texture), so pages can fetch them ahead of time
+  scanFiles: (site, zone, g) => !(g && g.scan) ? [] : [g.scan.src].concat(g.scan.parts || []).map(f => ({ url: Archive.dir(site, zone, g) + f })),
   params: () => Object.fromEntries(new URLSearchParams(location.search))
 };
 

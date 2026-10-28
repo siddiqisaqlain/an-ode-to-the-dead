@@ -12,8 +12,14 @@
 <body>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="assets/site.css?v=4">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<script src="assets/archive.js?v=6"></script>
+<script>/* start fetching this grave's scan before the page's scripts arrive */
+(function(){ var P=Archive.params(), s=Archive.site(P.site), z=Archive.zone(s,P.zone), g=Archive.grave(z,P.grave);
+  Archive.scanFiles(s,z,g).forEach(function(f){ var l=document.createElement('link'); l.rel='preload'; l.href=f.url; l.as='fetch'; l.crossOrigin='anonymous';   /* three.js fetches the texture too (as an ImageBitmap), so it matches */ document.head.appendChild(l); }); })();</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/site.css?v=5">
 <style>
 /* Layout: the scan fills the screen edge to edge; all chrome floats above it on translucent glass —
    large title top-left, a capsule toolbar bottom-centre, contextual bars at the top when a record is open. */
@@ -322,11 +328,8 @@ a.tb{text-decoration:none}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
-<script src="assets/archive.js?v=4"></script>
-<script src="assets/models.js?v=4"></script>
-<script src="assets/nav.js?v=4"></script>
+<script src="assets/models.js?v=5"></script>
+<script src="assets/nav.js?v=5"></script>
 <script>
 (function(){
 const EXAMPLE_DRAWING = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
@@ -540,6 +543,9 @@ document.addEventListener('keydown',e=>{ if(e.key!=='Escape'||$('dlg').open) ret
 const extOf=f=>f.name.split('.').pop().toLowerCase();
 const readAs=(f,how)=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; how==='text'?r.readAsText(f):r.readAsArrayBuffer(f); });
 let blobURLs=[];
+// the OBJ loaders are only needed when someone drops in their own model, so they load then
+const objLoaders=()=>objLoaders.p||(objLoaders.p=Promise.all(['OBJLoader','MTLLoader'].map(n=>new Promise((res,rej)=>{
+  const s=document.createElement('script'); s.src=`https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/${n}.js`; s.onload=res; s.onerror=rej; document.head.appendChild(s); }))));
 async function loadFiles(list){
   const files=[...list]; if(!files.length) return;
   if(state!=='closed'||tour.on){ toast('Go back to the model first'); return; }
@@ -560,6 +566,7 @@ async function loadFiles(list){
   try{
     const ext=extOf(main); let obj;
     if(ext==='obj'){
+      await objLoaders();
       const loader=new THREE.OBJLoader(manager);
       const mtl=files.find(f=>extOf(f)==='mtl');
       if(mtl){ const mats=new THREE.MTLLoader(manager).parse(await readAs(mtl,'text'),''); mats.preload(); loader.setMaterials(mats); }
