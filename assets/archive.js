@@ -69,7 +69,8 @@ window.ARCHIVE = {
         }
       ]
     },
-    { id: 'madeen-sahab', name: 'Madeen Sahab', place: 'Srinagar', zones: [{ id: 'A', graves: [] }] },
+    /* Madeen Sahab: one zone; 37 graves numbered on its zone map */
+    { id: 'madeen-sahab', name: 'Madeen Sahab', place: 'Srinagar', zones: [{ id: 'A', count: 37, graves: [] }] },
     { id: 'anderkote-sumbal', name: 'Anderkote, Sumbal', place: 'Ganderbal', zones: [{ id: 'A', graves: [] }, { id: 'B', graves: [] }, { id: 'C', graves: [] }] }
   ]
 };
