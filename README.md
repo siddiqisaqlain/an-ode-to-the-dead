@@ -25,6 +25,9 @@ Zones fill in over time:
 - `assets/archive.js`: the data (sites, zones, graves, files, photo poses, tours)
 - `assets/models.js`: the default 3D grave
 - `assets/site.css`: shared styles
+- `assets/nav.js`: the top bar (segmented trail, slide back)
+
+When you change a file in `assets/`, raise the `?v=` number on its `<script>`/`<link>` tags in the pages, so browsers don't mix a cached old file with a new page.
 - `archive/…`: the record files (scan as glTF from KIRI Engine, sheet, photographs)
 
 ## Confidential: all rights reserved
