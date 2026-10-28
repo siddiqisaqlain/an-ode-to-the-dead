@@ -65,12 +65,14 @@ body.landed .index li:nth-child(2){transition-delay:.12s} body.landed .index li:
 .card .meta{font-size:13px;color:var(--label2)}
 .card .coord{font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:var(--label2);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
 .card .coord i{font-style:normal;color:var(--label3)}
-.card .go{grid-column:2;display:none;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding-top:12px;border-top:.5px solid var(--hair)}
-.card .go a{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 16px;border-radius:999px;background:var(--tint);color:var(--tint-ink);text-decoration:none;font-size:14px;font-weight:600;white-space:nowrap}
-.card .go a:hover{background:color-mix(in srgb,var(--tint) 88%,#000)}
-.card .go small{font-size:12px;color:var(--label2)}
+.card{text-decoration:none}
+.card .go{grid-column:2;display:none;flex-direction:column;gap:8px;margin-top:10px;padding-top:12px;border-top:.5px solid var(--hair)}
+.card .go small{font-size:12px;font-weight:500;color:var(--tint)}
+.card .go i{display:block;height:2px;border-radius:1px;background:var(--fill2);overflow:hidden}
+.card .go i::after{content:"";display:block;height:100%;width:0;background:var(--tint);transition:width var(--enter,2s) linear}
 .card.on{background:var(--glass-strong)}
 .card.on .go{display:flex}
+.card.on .go i::after{width:100%}
 .foot{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink2);margin:0}
 .foot a{color:var(--tint);text-decoration:none}
 .foot a:hover{text-decoration:underline}
@@ -98,9 +100,7 @@ body.ready .hud{opacity:1}
 .tblock div:nth-child(odd){border-right:.5px solid var(--rule)}
 .tblock div:nth-last-child(-n+2){border-bottom:0}
 .tblock b{display:block;font-weight:500;color:var(--ink);font-size:11.5px;letter-spacing:.02em;text-transform:none;font-variant-numeric:tabular-nums;white-space:nowrap}
-.backall{position:fixed;z-index:4;top:max(40px,calc(env(safe-area-inset-top,0px) + 28px));right:max(40px,calc(env(safe-area-inset-right,0px) + 28px));
   opacity:0;pointer-events:none;transform:translateY(-8px);transition:opacity .4s var(--ease),transform .4s var(--ease)}
-body.focused .backall{opacity:1;pointer-events:auto;transform:none}
 
 /* map controls and attribution, quietened */
 .maplibregl-ctrl-scale{background:transparent;border-color:var(--ink2);color:var(--ink2);font-family:var(--f-mono);font-size:10px;letter-spacing:.04em}
@@ -126,10 +126,9 @@ body.nomap .index li,body.nomap .reveal{opacity:1;transform:none;filter:none}
   .hud{top:max(28px,calc(env(safe-area-inset-top,0px) + 20px));bottom:auto;right:20px}
   .tblock,.maplibregl-ctrl-scale{display:none}
   .maplibregl-ctrl-bottom-right{bottom:auto;top:96px;right:20px}
-  .backall{top:auto;bottom:calc(max(20px,env(safe-area-inset-bottom,0px)) + 210px);right:20px}
 }
 @media (prefers-reduced-motion:reduce){
-  .veil,.frame,.reveal,.index li,.sm > *,.card,.hud,.backall{transition:none!important}
+  .veil,.frame,.reveal,.index li,.sm > *,.card,.hud{transition:none!important}
 }
 </style>
 </head>
@@ -149,9 +148,6 @@ body.nomap .index li,body.nomap .reveal{opacity:1;transform:none;filter:none}
   <p class="foot reveal d3"><a href="grave.html?site=imambargah-hassanabad&amp;zone=G&amp;grave=2">Test record: Grave 2, Zone G →</a><span>© 2026 Saqlain Siddiqi. All rights reserved.</span></p>
 </section>
 
-<button class="cbtn glass backall" id="backAll" type="button">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5v4.5h4.5"/></svg>All sites
-</button>
 
 <div class="hud" aria-hidden="true">
   <div class="tblock glass">
@@ -179,13 +175,13 @@ $('lede').textContent = `${ARCHIVE.project}. ${ARCHIVE.institution}, funded by $
 const sites = ARCHIVE.sites.filter(s => s.lat);
 $('index').innerHTML = sites.map((s, i) => {
   const graves = s.zones.reduce((a, z) => a + z.graves.length, 0), traced = s.zones.filter(z => !z.template).length;
-  return `<li><div class="card glass" role="button" tabindex="0" data-i="${i}" aria-label="Show ${esc(s.name)} on the map">
+  return `<li><a class="card glass" href="${Archive.siteURL(s)}" data-i="${i}">
     <span class="no">${String(i + 1).padStart(2, '0')}</span>
     <h2>${esc(s.name)}</h2>
     <span class="meta">${esc(s.place)} · ${s.zones.length} zone${s.zones.length > 1 ? 's' : ''}${graves ? ` · ${graves} graves` : ''}</span>
     <span class="coord">${fmt(s.lat, s.lng)}${s.approx ? `<i title="${esc(s.approx)}">approx.</i>` : ''}</span>
-    <div class="go"><small>${traced ? `${traced} zone plan${traced > 1 ? 's' : ''} traced` : 'Zone plans to come'}</small><a href="${Archive.siteURL(s)}">Enter site <span aria-hidden="true">→</span></a></div>
-  </div></li>`;
+    <span class="go"><small>Entering site</small><i></i></span>
+  </a></li>`;
 }).join('');
 const cards = [...document.querySelectorAll('.card')];
 
@@ -242,15 +238,18 @@ function overview(){
 }
 const FOCUS = [{ bearing: -32, pitch: 62, zoom: 15.9 }, { bearing: 28, pitch: 60, zoom: 15.9 }, { bearing: -12, pitch: 58, zoom: 14.6 }];
 let focused = -1;
+const ENTER_MS = 2200;
 function focus(i){
+  if (focused === i) return;
   focused = i; stopOrbit();
   cards.forEach((c, j) => c.classList.toggle('on', j === i));
   markers.forEach((m, j) => m.getElement().classList.toggle('dim', j !== i));
-  document.body.classList.add('focused');
-  const s = sites[i], f = FOCUS[i] || FOCUS[0];
-  map.flyTo({ center: [s.lng, s.lat], zoom: f.zoom, pitch: f.pitch, bearing: f.bearing, offset: mobile() ? [0, -90] : [Math.min(200, innerWidth * .16), 40],
-    duration: reduced ? 0 : 3400, curve: 1.5, essential: true });
+  const s = sites[i], url = Archive.siteURL(s), ms = reduced ? 0 : ENTER_MS;
+  document.documentElement.style.setProperty('--enter', ms + 'ms');
   if (mobile()) cards[i].scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', inline: 'center', block: 'nearest' });
+  map.flyTo({ ...MapKit.entry(s), duration: ms, curve: 1.4, essential: true });
+  // carry straight on into the site, which opens on this same view
+  map.once('moveend', () => { if (focused === i) location.href = url; });
 }
 function showAll(){
   focused = -1; cards.forEach(c => c.classList.remove('on')); markers.forEach(m => m.getElement().classList.remove('dim'));
@@ -259,11 +258,9 @@ function showAll(){
   map.once('moveend', () => setTimeout(startOrbit, 600));
 }
 cards.forEach((c, i) => {
-  c.addEventListener('click', e => { if (!e.target.closest('a') && focused !== i) focus(i); });
-  c.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('a')) { e.preventDefault(); focus(i); } });
+  c.addEventListener('click', e => { if (e.metaKey || e.ctrlKey || e.shiftKey || !map) return; e.preventDefault(); focus(i); });
   c.addEventListener('mouseenter', () => hot(i)); c.addEventListener('mouseleave', () => hot(null));
 });
-$('backAll').addEventListener('click', showAll);
 addEventListener('keydown', e => { if (e.key === 'Escape' && focused >= 0) showAll(); });
 
 /* a slow drift around the overview until someone takes the controls */

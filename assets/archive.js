@@ -11,11 +11,15 @@ window.ARCHIVE = {
   sites: [
     {
       id: 'imambargah-hassanabad', name: 'Imambargah, Hassanabad', place: 'Rainawari, Srinagar', lat: 34.102778, lng: 74.830606,
+      /* at: where the zone lies (its centre), from the site key plan zone-maps/imambargah-hassanabad/site-reference.png, which was
+         georeferenced against satellite imagery (centre 34.102826, 74.830186; 0.17 m per pixel; north up). This places the zones;
+         span: the zone's east–west extent on the ground in metres, measured on the same key plan; each zone map was drawn at its
+         own scale to fit the sheet, so its plan is scaled to this. The sheet coordinates below are kept as recorded. */
       /* count: number of graves, from each zone's map. lat/lng: the coordinates written on the zone's documented sheet
          (coordsFrom names that grave). Zone G's sheet repeats Zone F's coordinates, so they are marked for checking. */
       zones: [
         {
-          id: 'A', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-A.png',
+          id: 'A', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-A.png', at: [34.10302, 74.829712], span: 22,
           count: 1, lat: 34.102989, lng: 74.829878, coordsFrom: 'Grave 1',
           boundary: [[0.0,0.0], [10.16,0.0], [10.16,8.78], [0.0,8.78]],
           graves: [
@@ -23,7 +27,7 @@ window.ARCHIVE = {
           ]
         },
         {
-          id: 'B', source: 'the zone map on the Grave 2 sheet', map: 'zone-maps/imambargah-hassanabad/zone-B.png',
+          id: 'B', source: 'the zone map on the Grave 2 sheet', map: 'zone-maps/imambargah-hassanabad/zone-B.png', at: [34.10293, 74.830186], span: 24,
           count: 11, lat: 34.102911, lng: 74.830243, coordsFrom: 'Grave 2',
           boundary: [[0.0,0.0], [1.56,0.0], [1.56,1.9], [9.97,1.9], [9.97,3.12], [8.7,3.12], [8.63,7.96], [6.84,8.04], [5.51,7.81], [3.87,7.11], [2.38,6.18], [1.26,5.06], [0.52,3.94], [0.07,2.83]],
           graves: [
@@ -41,7 +45,7 @@ window.ARCHIVE = {
           ]
         },
         {
-          id: 'C', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-C.png',
+          id: 'C', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-C.png', at: [34.102974, 74.830383], span: 18,
           count: 21, lat: 34.102952, lng: 74.830341, coordsFrom: 'Grave 1',
           boundary: [[0.0,0.09], [8.52,0.0], [8.65,2.53], [10.34,2.47], [10.34,6.94], [0.0,7.03]],
           graves: [
@@ -69,7 +73,7 @@ window.ARCHIVE = {
           ]
         },
         {
-          id: 'D', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-D.png',
+          id: 'D', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-D.png', at: [34.103046, 74.830503], span: 7,
           count: 1, lat: 34.102970, lng: 74.830365, coordsFrom: 'Grave 1',
           boundary: [[0.0,0.0], [7.37,0.0], [7.37,8.48], [0.0,8.48]],
           graves: [
@@ -77,7 +81,7 @@ window.ARCHIVE = {
           ]
         },
         {
-          id: 'E', source: 'the zone map on the Grave 2 sheet', map: 'zone-maps/imambargah-hassanabad/zone-E.png',
+          id: 'E', source: 'the zone map on the Grave 2 sheet', map: 'zone-maps/imambargah-hassanabad/zone-E.png', at: [34.10326, 74.830474], span: 26,
           count: 15, lat: 34.103101, lng: 74.830395, coordsFrom: 'Grave 2',
           boundary: [[1.97,0.0], [12.07,0.0], [12.07,5.0], [3.52,5.51], [3.52,7.4], [0.0,7.4], [0.0,4.46], [1.97,4.46]], features: [{ label: 'Tree enclosure', x: 6.88, z: 2.79, w: 3.2, d: 3.2 }],
           graves: [
@@ -99,7 +103,7 @@ window.ARCHIVE = {
           ]
         },
         {
-          id: 'F', source: 'the zone map on the Grave 2 (Sheet 56) sheet', map: 'zone-maps/imambargah-hassanabad/zone-F.png',
+          id: 'F', source: 'the zone map on the Grave 2 (Sheet 56) sheet', map: 'zone-maps/imambargah-hassanabad/zone-F.png', at: [34.103109, 74.830625], span: 11,
           count: 3, lat: 34.102778, lng: 74.830606, coordsFrom: 'Grave 2 (Sheet 56)',
           boundary: [[0.0,0.0], [4.95,0.0], [4.95,5.39], [0.0,5.39]],
           graves: [
@@ -109,7 +113,7 @@ window.ARCHIVE = {
           ]
         },
         {
-          id: 'G', source: 'the zone map on Sheet 61', map: 'zone-maps/imambargah-hassanabad/zone-G.png', count: 7,
+          id: 'G', source: 'the zone map on Sheet 61', map: 'zone-maps/imambargah-hassanabad/zone-G.png', at: [34.1028, 74.830623], span: 24, count: 7,
           lat: 34.102778, lng: 74.830606, coordsFrom: 'Grave 2 (Sheet 61)', coordsCheck: 'Same as Zone F on Sheet 56',
           north: 15,   // degrees clockwise from the top of the plan
           boundary: [[3.8, 0], [11.12, 0], [11.38, 8.12], [0, 8.32], [0.1, 5.05], [2.81, 4.98], [2.87, 5.64],

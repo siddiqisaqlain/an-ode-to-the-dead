@@ -59,23 +59,26 @@ window.MapKit = (function(){
   }
 
   /* ---------- placing zone plans on the map ----------
-     A zone's sheet records one coordinate and names the grave it was taken at (coordsFrom). That grave's plan position is pinned
-     to the coordinate and the plan is turned so its north matches (zone.north: degrees clockwise from the top of the plan).
+     If the site key plan marks where a zone lies (zone.at), the zone's centre goes there. Otherwise the zone's sheet coordinate is
+     used: the sheet names the grave it was taken at (coordsFrom), and that grave's plan position is pinned to the coordinate and the plan is turned so its north matches (zone.north: degrees clockwise from the top of the plan).
      Zones without a recorded coordinate are set around the site's reference point, one beside the next. */
   const M = 111320;
   function framer(site, zone, slot, slots){
     const th = (zone.north || 0) * Math.PI / 180, cos = Math.cos(th), sin = Math.sin(th), b = zone.boundary;
     const hit = /Grave (\d+)/.exec(zone.coordsFrom || ''), g = hit && zone.graves.find(x => x.n === +hit[1] && x.plan);
     let ax, az, lat, lng, how;
-    if (zone.lat && g) { ax = g.plan.x; az = g.plan.z; lat = zone.lat; lng = zone.lng; how = 'sheet'; }
+    const centre = () => { const xs = b.map(p => p[0]), zs = b.map(p => p[1]); return [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...zs) + Math.max(...zs)) / 2]; };
+    if (zone.at) { [ax, az] = centre(); [lat, lng] = zone.at; how = 'reference'; }   // the site key plan marks where the zone lies
+    else if (zone.lat && g) { ax = g.plan.x; az = g.plan.z; lat = zone.lat; lng = zone.lng; how = 'sheet'; }
     else {
       const xs = b.map(p => p[0]), zs = b.map(p => p[1]);
       ax = (Math.min(...xs) + Math.max(...xs)) / 2; az = (Math.min(...zs) + Math.max(...zs)) / 2;
       lat = site.lat; lng = site.lng + ((slot - (slots - 1) / 2) * 16) / (M * Math.cos(site.lat * Math.PI / 180));
       how = zone.template ? 'template' : 'site';
     }
-    const kl = M * Math.cos(lat * Math.PI / 180);
-    const at = (x, z) => { const dx = x - ax, dz = z - az, e = dx * cos + dz * sin, n = dx * sin - dz * cos; return [lng + e / kl, lat + n / M]; };
+    const kl = M * Math.cos(lat * Math.PI / 180), xs = b.map(p => p[0]);
+    const k = zone.span ? zone.span / (Math.max(...xs) - Math.min(...xs)) : 1;   // the zone's measured ground extent, where known
+    const at = (x, z) => { const dx = (x - ax) * k, dz = (z - az) * k, e = dx * cos + dz * sin, n = dx * sin - dz * cos; return [lng + e / kl, lat + n / M]; };
     return { at, how };
   }
   function rect(at, p, h){
@@ -87,7 +90,7 @@ window.MapKit = (function(){
     return pts;
   }
   function geo(site){
-    const free = site.zones.filter(z => !(z.lat && /Grave \d+/.test(z.coordsFrom || '')));
+    const free = site.zones.filter(z => !z.at && !(z.lat && /Grave \d+/.test(z.coordsFrom || '')));
     const zones = [], graves = [], labels = [];
     let gid = 0;
     site.zones.forEach((z, i) => {
@@ -108,5 +111,11 @@ window.MapKit = (function(){
     return { zones: { type: 'FeatureCollection', features: zones }, graves: { type: 'FeatureCollection', features: graves }, labels };
   }
 
-  return { palette, style, geo };
+  /* the camera both pages agree on when you enter a site: the front page flies to it, the site page opens on it */
+  function entry(site){
+    const b = new maplibregl.LngLatBounds(); geo(site).labels.forEach(l => { b.extend(l.bounds[0]); b.extend(l.bounds[1]); });
+    const c = b.getCenter(); return { center: [c.lng, c.lat], zoom: 15.2, pitch: 40, bearing: -22 };
+  }
+
+  return { palette, style, geo, entry };
 })();

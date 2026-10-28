@@ -168,7 +168,7 @@ $('tabs').innerHTML = `<button type="button" data-z="" aria-pressed="true">All</
   site.zones.map(z => `<button type="button" data-z="${z.id}" aria-pressed="false">${z.id}${z.graves.length ? `<small>${z.graves.length}</small>` : ''}</button>`).join('');
 
 /* ---------- the panel: zones, or one zone's graves ---------- */
-const placed = { sheet: 'Placed by the coordinate on its sheet', site: 'Placed at the site\'s reference point', template: 'Template plan, placed at the site\'s reference point' };
+const placed = { reference: 'Placed where the site key plan marks it', sheet: 'Placed by the coordinate on its sheet', site: 'Placed at the site\'s reference point', template: 'Template plan, placed at the site\'s reference point' };
 function showZones(){
   $('pKicker').textContent = site.place; $('pTitle').textContent = `${site.zones.length} zone${site.zones.length > 1 ? 's' : ''}`;
   $('pNote').textContent = total ? `${total} graves across the site. Choose a zone to fly into it.` : 'Zone plans to come.';
@@ -178,7 +178,9 @@ function showZones(){
     return `<li><button type="button" data-z="${z.id}"><span class="badge z${z.template ? ' tpl' : ''}">${z.id}</span>
       <span class="t"><b>Zone ${z.id}</b><span>${n ? `${n} grave${n > 1 ? 's' : ''}` : 'Graves to come'} · ${z.template ? 'template plan' : 'traced plan'}</span></span>${chev}</button></li>`;
   }).join('');
-  $('note').innerHTML = site.zones.some(z => !z.template)
+  $('note').innerHTML = site.zones.some(z => z.at)
+    ? '<b>How zones are placed.</b> Each zone is set where the site key plan marks it; the key plan was aligned to satellite imagery. Zone outlines and graves are traced from each zone map at approximate scale.'
+    : site.zones.some(z => !z.template)
     ? '<b>How zones are placed.</b> Each zone plan is traced from its zone map and pinned to the coordinate recorded on its sheet, at the grave the sheet names. Plans are at approximate scale and phone-GPS coordinates can be several metres out, so neighbouring zones may overlap.'
     : '<b>Template plans.</b> These zones are placeholders set at the site\'s reference point until their zone maps and coordinates arrive.';
   bindList();
@@ -194,7 +196,7 @@ function showZone(l){
     return `<li><a href="${Archive.graveURL(site, z, grave)}" data-n="${g.n}"><span class="badge${g.rec ? ' rec' : ''}">${g.n}</span>
       <span class="t"><b>Grave ${g.n}</b><span>${sub}</span></span>${chev}</a></li>`;
   }).join('') : '<li><span class="t" style="padding:14px"><span>No graves listed for this zone yet.</span></span></li>';
-  $('note').innerHTML = z.coordsCheck ? `<b>To check.</b> ${esc(z.coordsCheck)}: this zone may sit on top of another until its coordinate is confirmed.` : '';
+  $('note').innerHTML = z.coordsCheck ? `<b>Sheet coordinate to check.</b> ${esc(z.coordsCheck)}.${l.how === 'reference' ? ' The zone is placed from the site key plan, so this does not affect the map.' : ''}` : '';
   bindList();
 }
 function bindList(){
@@ -215,7 +217,7 @@ const all = new maplibregl.LngLatBounds(); L.forEach(l => { all.extend(l.bounds[
 let map;
 try {
   map = new maplibregl.Map({ container: 'map', style: MapKit.style(c, { exaggeration: 1, villagesFrom: 14, buildingOpacity: .8 }),
-    center: all.getCenter(), zoom: 15.2, pitch: 40, bearing: -22, maxZoom: 22.5, maxPitch: 78, attributionControl: { compact: true },
+    ...MapKit.entry(site), maxZoom: 22.5, maxPitch: 78, attributionControl: { compact: true },
     canvasContextAttributes: { antialias: true } });
 } catch (e) { document.body.classList.add('nomap', 'ready', 'landed'); showZones(); return; }
 map.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: 'metric' }), 'bottom-left');
