@@ -9,11 +9,18 @@ window.ARCHIVE = {
   sites: [
     {
       id: 'imambargah-hassanabad', name: 'Imambargah, Hassanabad', place: 'Rainawari, Srinagar', lat: 34.102778, lng: 74.830606,
+      /* count: number of graves, from each zone's map. lat/lng: the coordinates written on the zone's documented sheet
+         (coordsFrom names that grave). Zone G's sheet repeats Zone F's coordinates, so they are marked for checking. */
       zones: [
-        { id: 'A', graves: [] }, { id: 'B', graves: [] }, { id: 'C', graves: [] }, { id: 'D', graves: [] },
-        { id: 'E', graves: [] }, { id: 'F', graves: [] },
+        { id: 'A', count: 1,  lat: 34.102989, lng: 74.829878, coordsFrom: 'Grave 1', graves: [] },
+        { id: 'B', count: 11, lat: 34.102911, lng: 74.830243, coordsFrom: 'Grave 2', graves: [] },
+        { id: 'C', count: 21, lat: 34.102952, lng: 74.830341, coordsFrom: 'Grave 1', graves: [] },
+        { id: 'D', count: 1,  lat: 34.102970, lng: 74.830365, coordsFrom: 'Grave 1', graves: [] },
+        { id: 'E', count: 15, lat: 34.103101, lng: 74.830395, coordsFrom: 'Grave 2', graves: [] },
+        { id: 'F', count: 3,  lat: 34.102778, lng: 74.830606, coordsFrom: 'Grave 2 (Sheet 56)', graves: [] },
         {
-          id: 'G', source: 'the zone map on Sheet 61',
+          id: 'G', source: 'the zone map on Sheet 61', count: 7,
+          lat: 34.102778, lng: 74.830606, coordsFrom: 'Grave 2 (Sheet 61)', coordsCheck: 'Same as Zone F on Sheet 56',
           north: 15,   // degrees clockwise from the top of the plan
           boundary: [[3.8, 0], [11.12, 0], [11.38, 8.12], [0, 8.32], [0.1, 5.05], [2.81, 4.98], [2.87, 5.64],
                      [3.73, 5.64], [3.73, 3.66], [3.3, 3.66], [3.3, 3], [3.8, 3]],
