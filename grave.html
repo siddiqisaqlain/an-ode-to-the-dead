@@ -161,7 +161,7 @@ dialog::backdrop{background:rgba(0,0,0,.32)}
 @media (prefers-reduced-motion:reduce){.pin i,.status::before{animation:none}.scrim,.photo,.toolbar,.titlebar{transition:none}}
 
 /* where this grave sits: breadcrumb under the large title; neighbouring graves in the toolbar */
-.titlebar .navpill{margin-bottom:12px}
+.titlebar .segnav{margin-bottom:14px}
 
 /* arrival: the stage blooms open (continuing the dive from the zone map) and the chrome settles in after the camera */
 .arrive{position:absolute;inset:0;z-index:20;pointer-events:none;background:var(--bg);animation:arrive .9s var(--ease) .1s forwards}
@@ -825,10 +825,8 @@ document.title=`${record.title} · ${SITE.name}`;
 $('graveName').textContent=record.title;
 Nav.mount({ el:$('nav'),
   trail:[{label:'Sites',href:'index.html'},{label:SITE.name,href:Archive.siteURL(SITE)},{label:'Zone '+ZONE.id,href:Archive.siteURL(SITE,ZONE)},{label:'Grave '+GRAVE.n}],
-  back:{label:'Zone '+ZONE.id,href:Archive.siteURL(SITE,ZONE)},
-  // the zone map opens close on this grave and rises out of it
-  beforeLeave:()=>{ try{ sessionStorage.setItem('ode:return',JSON.stringify({zone:ZONE.id,grave:GRAVE.n,t:Date.now()})); }catch(e){} } });
-$('nav').querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{ if(a.getAttribute('href')===Archive.siteURL(SITE,ZONE)) try{ sessionStorage.setItem('ode:return',JSON.stringify({zone:ZONE.id,grave:GRAVE.n,t:Date.now()})); }catch(e){} }));
+  // back to the zone: its map opens close on this grave and rises out of it
+  beforeLeave:item=>{ if(item.href===Archive.siteURL(SITE,ZONE)) try{ sessionStorage.setItem('ode:return',JSON.stringify({zone:ZONE.id,grave:GRAVE.n,t:Date.now()})); }catch(e){} } });
 const order=[...ZONE.graves].sort((a,b)=>a.n-b.n), at=order.indexOf(GRAVE);
 [['prevGrave',order[at-1],'Previous'],['nextGrave',order[at+1],'Next']].forEach(([id,g,word])=>{
   const a=$(id); if(g){ a.href=Archive.graveURL(SITE,ZONE,g); a.title=`${word}: Grave ${g.n}`; } else a.setAttribute('aria-disabled','true');

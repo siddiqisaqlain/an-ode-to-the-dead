@@ -31,7 +31,7 @@ body.ready .veil{opacity:0}
 .frame::after{right:-1px;bottom:-1px;border-width:0 1.5px 1.5px 0}
 
 .titlebar{position:fixed;z-index:4;top:max(36px,calc(env(safe-area-inset-top,0px) + 24px));left:max(36px,calc(env(safe-area-inset-left,0px) + 24px));right:420px;pointer-events:none}
-.titlebar .navpill{margin-bottom:14px}
+.titlebar .segnav{margin-bottom:16px}
 .titlebar h1{font-family:var(--f-display);font-weight:600;font-size:clamp(30px,3.6vw,44px);line-height:1.02;letter-spacing:-.03em;margin:0;color:var(--ink)}
 .titlebar p{margin:8px 0 0;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;color:var(--ink2);text-transform:uppercase}
 .rise{opacity:0;transform:translateY(12px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
@@ -177,10 +177,9 @@ const G = MapKit.geo(site), L = G.labels, total = L.reduce((a, l) => a + l.grave
 document.title = site.name + ' · Zones';
 $('siteName').textContent = site.name;
 $('siteMeta').textContent = `${site.place} · ${site.zones.length} zone${site.zones.length > 1 ? 's' : ''}${total ? ` · ${total} graves` : ''}`;
-const nav = Nav.mount({ el: $('nav'), trail: [{ label: 'Sites', href: 'index.html' }, { label: site.name }], back: { label: 'Sites', href: 'index.html' } });
+const nav = Nav.mount({ el: $('nav'), trail: [{ label: 'Sites', href: 'index.html' }, { label: site.name }] });
 function setNav(z){
-  if (z) nav.set([{ label: 'Sites', href: 'index.html' }, { label: site.name, href: Archive.siteURL(site) }, { label: 'Zone ' + z.id }], { label: 'All zones', run: () => focusZone('') });
-  else nav.set([{ label: 'Sites', href: 'index.html' }, { label: site.name }], { label: 'Sites', href: 'index.html' });
+  nav.set([{ label: 'Sites', href: 'index.html' }, { label: site.name, href: Archive.siteURL(site), run: () => focusZone('') }].concat(z ? [{ label: 'Zone ' + z.id }] : []));
 }
 $('tabs').innerHTML = `<button type="button" data-z="" aria-pressed="true">All</button>` +
   site.zones.map(z => `<button type="button" data-z="${z.id}" aria-pressed="false">${z.id}${z.graves.length ? `<small>${z.graves.length}</small>` : ''}</button>`).join('');
