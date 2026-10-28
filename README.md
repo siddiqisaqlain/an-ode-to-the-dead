@@ -16,4 +16,8 @@ An interactive 3D record of a historic grave, built as part of *Documentation an
 - `drawing.png`: Sheet 61
 - `photo-1.jpg`: reference photograph, placed by matching it to the scan
 
-Author: Saqlain Siddiqi
+## Confidential: all rights reserved
+
+This repository is private and shared only with invited people. Access does not grant permission to copy, download for reuse, publish or share any of its contents, including the code, scan, drawing and photographs. See [LICENSE](LICENSE).
+
+Author: Saqlain Siddiqi · © 2026 Saqlain Siddiqi. All rights reserved.
