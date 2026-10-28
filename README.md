@@ -1,20 +1,31 @@
 # An Ode to the Dead
 
-An interactive 3D record of a historic grave, built as part of *Documentation and Conservation of Three Historical Graveyards of Kashmir* (Islamic University of Science and Technology, Awantipora; funded by The Barakat Trust, UK).
+An interactive 3D record of three historic graveyards, built as part of *Documentation and Conservation of Three Historical Graveyards of Kashmir* (Islamic University of Science and Technology, Awantipora; funded by The Barakat Trust, UK).
 
-**Test record:** Grave 2, Zone G, Imambargah, Hassanabad, Srinagar. Measured drawing: Sheet 61 (1:10).
+## How it is organised
+The site follows the project's folder structure: **site → zone → grave**.
 
-## How to use
-- Drag to orbit, scroll or pinch to zoom.
-- Click the grave: the measured drawing rises from behind it. Click the drawing to open it full size. Click the grave again to put it away.
-- Click a photo dot: the view moves to the spot the photograph was taken from and the photograph fades in over the scan. Hold the photo to compare it with the scan.
-- **Guided tour** plays a narrated sequence through the stone, the photograph and the drawing.
+1. `index.html`: the three sites (Imambargah, Hassanabad · Madeen Sahab · Anderkote, Sumbal).
+2. `site.html?site=…&zone=…`: zone tabs. Each zone shows a 3D map built from its zone plan, with its graves numbered in plan order and a list beside the map.
+3. `grave.html?site=…&zone=…&grave=…`: one grave. It shows the 3D scan if there is one, or a default model sized from the zone plan. It has the measured sheet, photographs placed where they were taken, a guided tour, and a **Files** drawer with the grave's five folders: CAD drawing, PDFs (final + revisions), photos, sketches, photographer's photos.
+
+**Test record:** Grave 2, Zone G, Imambargah, Hassanabad. Measured drawing: Sheet 61 (1:10). Zone G's map is traced from the zone map on that sheet, so its scale is approximate.
+
+## Adding to the archive
+All content is listed in `assets/archive.js`. To add a grave, put its files under
+`archive/<site>/zone-<letter>/grave-<n>/{cad,pdfs,pdfs/revisions,photos,sketches,photographer,scan}/`
+and add the grave's entry (plan position, files) to its zone in `archive.js`.
+
+Zones fill in over time:
+1. **No plan yet:** the zone shows a default template plan (a plain rectangle).
+2. **Number of graves known:** add `count: N` to the zone. Numbered graves are set out in rows on the template, and each gets a grave page with the default model.
+3. **Site plan traced:** add the zone's `boundary` and each grave's `plan` position, in metres. The template is replaced by the real layout.
 
 ## Files
-- `index.html`: the viewer (three.js r128 from CDN)
-- `scan.json` + `scan-texture.jpg`: photogrammetry scan (KIRI Engine), as glTF
-- `drawing.png`: Sheet 61
-- `photo-1.jpg`: reference photograph, placed by matching it to the scan
+- `assets/archive.js`: the data (sites, zones, graves, files, photo poses, tours)
+- `assets/models.js`: the default 3D grave
+- `assets/site.css`: shared styles
+- `archive/…`: the record files (scan as glTF from KIRI Engine, sheet, photographs)
 
 ## Confidential: all rights reserved
 
