@@ -8,261 +8,334 @@
 <meta name="copyright" content="© 2026 Saqlain Siddiqi. All rights reserved.">
 <title>Graveyard Zones</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
 <link rel="stylesheet" href="assets/site.css">
 <style>
-/* Layout: the zone map fills the screen; title top-left, zone switcher bottom-centre, grave list on a glass panel at the right
-   (below the map on phones) */
-body{overflow:hidden}
-.app{position:relative;height:100%}
-.stage{position:absolute;inset:0;overflow:hidden;background:radial-gradient(ellipse 90% 75% at 40% 55%, var(--bg) 0%, var(--bg2) 100%)}
-#view{display:block;width:100%;height:100%;touch-action:none}
-.titlebar{position:absolute;z-index:5;top:calc(20px + env(safe-area-inset-top,0px));left:max(24px,env(safe-area-inset-left,0px));right:376px;pointer-events:none}
-.titlebar .crumbs{margin-bottom:4px}
-.titlebar p{margin:4px 0 0;font-size:15px;color:var(--label2)}
-.tools{position:absolute;z-index:5;top:calc(20px + env(safe-area-inset-top,0px));right:364px;display:flex;flex-direction:column;gap:8px}
-.tools .cbtn{background:var(--glass)}
-.north{display:block;width:44px;height:44px;border-radius:50%}
-.north g{transform-origin:22px 22px}
-.tabs{position:absolute;z-index:6;left:calc((100% - 352px) / 2);bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
-  display:flex;gap:2px;padding:5px;border-radius:999px;max-width:calc(100% - 384px);overflow-x:auto;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
-.tabs a{flex:none;display:flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;text-decoration:none;font-size:15px;font-weight:500;transition:background .2s}
-.tabs a small{font-size:12px;font-weight:600;color:var(--label2)}
-.tabs a:hover{background:var(--fill)}
-.tabs a[aria-current="page"]{background:var(--tint);color:var(--tint-ink)}
-.tabs a[aria-current="page"] small{color:inherit;opacity:.8}
-.lbl3d{position:absolute;z-index:3;left:0;top:0;display:grid;place-items:center;min-width:28px;height:28px;padding:0 7px;margin:-14px 0 0 -14px;border-radius:14px;
-  border:2.5px solid #fff;cursor:pointer;font-size:13px;font-weight:700;background:var(--label);color:var(--bg);box-shadow:0 2px 8px rgba(0,0,0,.3);transition:transform .2s var(--ease)}
-.lbl3d.rec{background:var(--mark);color:#fff}
-.lbl3d.hot{transform:scale(1.2)}
-.empty{position:absolute;z-index:4;left:calc((100% - 352px) / 2);bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
-  width:min(340px,calc(100% - 400px));text-align:center;pointer-events:none;border-radius:18px;padding:12px 16px}
-.empty h3{font-size:15px;font-weight:600;margin:0 0 2px}
-.empty p{margin:0;color:var(--label2);font-size:13px}
-.panel{position:absolute;z-index:5;top:calc(12px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));
-  width:340px;border-radius:24px;display:flex;flex-direction:column;overflow:hidden;background:var(--glass-strong)}
-.panel header{flex:none;padding:20px 20px 12px}
-.panel header small{font-size:13px;font-weight:600;color:var(--label2)}
-.panel header h2{font-family:var(--f-display);font-weight:700;font-size:28px;letter-spacing:-.025em;margin:2px 0 4px}
-.panel header p{margin:0;font-size:13px;color:var(--label2)}
-.graves{list-style:none;margin:0 16px 16px;padding:0;border-radius:14px;background:var(--fill);overflow-y:auto}
-.graves li+li{border-top:.5px solid var(--hair)}
-.graves a{display:flex;align-items:center;gap:12px;padding:10px 14px;text-decoration:none;min-height:56px}
-.graves a:hover,.graves a.hot{background:var(--fill)}
-.graves .n{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--label);color:var(--bg);font-size:13px;font-weight:700;flex:none}
-.graves .rec .n{background:var(--mark);color:#fff}
-.graves .t{display:flex;flex-direction:column;min-width:0;margin-right:auto}
-.graves .t b{font-weight:500;font-size:16px}
-.graves .t span{font-size:13px;color:var(--label2)}
-.graves .chev{width:8px;height:14px;color:var(--label3);flex:none}
+/* Site: the same 3D map as the front page, flown in close. Each zone plan sits on the map where its sheet's coordinate puts it,
+   outlined and lit; its graves stand on it. Title top-left, zone switcher bottom-centre, zone and grave list on the right. */
+:root{ --paper:#ecebe6; --ink:#1d1d1f; --ink2:#6e6e73; --rule:rgba(29,29,31,.16); --f-mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace }
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){ --paper:#141518; --ink:#f5f5f7; --ink2:#98989d; --rule:rgba(245,245,247,.14) }}
+:root[data-theme="dark"]{ --paper:#141518; --ink:#f5f5f7; --ink2:#98989d; --rule:rgba(245,245,247,.14) }
+
+body{overflow:hidden;background:var(--paper)}
+#map{position:fixed;inset:0;background:var(--paper)}
+.veil{position:fixed;inset:0;z-index:2;background:var(--paper);pointer-events:none;transition:opacity .7s var(--ease)}
+body.ready .veil{opacity:0}
+.fade{position:fixed;z-index:1;top:0;left:0;right:0;height:220px;pointer-events:none;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--paper) 82%,transparent),transparent)}
+.frame{position:fixed;z-index:3;inset:max(12px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));
+  border:.5px solid var(--rule);pointer-events:none}
+.frame::before,.frame::after{content:"";position:absolute;width:14px;height:14px;border:solid var(--ink);opacity:.5}
+.frame::before{left:-1px;top:-1px;border-width:1.5px 0 0 1.5px}
+.frame::after{right:-1px;bottom:-1px;border-width:0 1.5px 1.5px 0}
+
+.titlebar{position:fixed;z-index:4;top:max(36px,calc(env(safe-area-inset-top,0px) + 24px));left:max(36px,calc(env(safe-area-inset-left,0px) + 24px));right:420px;pointer-events:none}
+.titlebar .crumbs{margin-bottom:6px;font-size:14px}
+.titlebar h1{font-family:var(--f-display);font-weight:600;font-size:clamp(30px,3.6vw,44px);line-height:1.02;letter-spacing:-.03em;margin:0;color:var(--ink)}
+.titlebar p{margin:8px 0 0;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;color:var(--ink2);text-transform:uppercase}
+.rise{opacity:0;transform:translateY(12px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+body.ready .rise{opacity:1;transform:none}
+
+/* zone tags: a short leader with the zone letter and its grave count */
+.zt{display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.zt > *{opacity:0;transform:translateY(8px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+body.landed .zt > *{opacity:1;transform:none}
+.zt-tag{display:flex;align-items:center;gap:7px;padding:4px 10px 4px 4px;border-radius:999px;white-space:nowrap;font-size:12.5px;font-weight:600;color:var(--label)}
+.zt-tag b{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--mark);color:#fff;font-size:12px;font-weight:700}
+.zt-tag small{font-weight:500;color:var(--label2)}
+.zt.tpl .zt-tag b{background:var(--label3)}
+.zt-stem{width:1px;height:var(--stem,28px);background:linear-gradient(var(--ink),color-mix(in srgb,var(--ink) 10%,transparent))}
+.zt:hover .zt-tag,.zt.hot .zt-tag{background:var(--glass-strong)}
+body.zoomed .zt{display:none}
+/* grave numbers, shown for the zone in view */
+.gn{display:grid;place-items:center;min-width:22px;height:22px;padding:0 5px;border-radius:11px;border:2px solid #fff;background:var(--ink);color:var(--paper);
+  font-size:11px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.3);transition:transform .2s var(--ease)}
+.gn.rec{background:var(--mark);color:#fff}
+.gn.hot{transform:scale(1.25)}
+
+/* right: zones, then a zone's graves */
+.panel{position:fixed;z-index:5;top:max(12px,env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));
+  width:360px;border-radius:24px;display:flex;flex-direction:column;overflow:hidden;background:var(--glass-strong);
+  transform:translateX(calc(100% + 24px));transition:transform .7s var(--ease)}
+body.ready .panel{transform:none}
+.panel header{flex:none;padding:20px 20px 10px}
+.panel header small{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--label2)}
+.panel header h2{font-family:var(--f-display);font-weight:700;font-size:28px;letter-spacing:-.025em;margin:4px 0 4px}
+.panel header p{margin:0;font-size:13px;color:var(--label2);line-height:1.45}
+.back{flex:none;display:flex;align-items:center;gap:4px;margin:0 16px 6px;padding:0;border:0;background:none;color:var(--tint);font-size:15px;cursor:pointer}
+.back svg{width:16px;height:16px}
+.list{list-style:none;margin:6px 16px 12px;padding:0;border-radius:14px;background:var(--fill);overflow-y:auto;flex:0 1 auto}
+.list li+li{border-top:.5px solid var(--hair)}
+.list a,.list button{display:flex;align-items:center;gap:12px;width:100%;padding:10px 14px;min-height:56px;border:0;background:none;text-align:left;text-decoration:none;cursor:pointer;color:var(--label)}
+.list a:hover,.list button:hover,.list .hot{background:var(--fill)}
+.badge{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;flex:none;background:var(--label);color:var(--bg);font-size:13px;font-weight:700}
+.badge.z{background:var(--mark);color:#fff;font-size:15px}
+.badge.tpl{background:var(--label3)}
+.badge.rec{background:var(--mark);color:#fff}
+.list .t{display:flex;flex-direction:column;min-width:0;margin-right:auto}
+.list .t b{font-weight:500;font-size:16px}
+.list .t span{font-size:13px;color:var(--label2)}
+.chev{width:8px;height:14px;color:var(--label3);flex:none}
 .refmap{flex:none;margin:0 16px 12px;border-radius:14px;background:var(--fill);overflow:hidden}
 .refmap summary{cursor:pointer;padding:10px 14px;font-size:15px;font-weight:500;color:var(--tint);list-style:none}
 .refmap summary::-webkit-details-marker{display:none}
 .refmap summary::after{content:"Show";float:right;font-size:13px;color:var(--label2);font-weight:400}
 .refmap[open] summary::after{content:"Hide"}
 .refmap img{display:block;width:100%;background:#fff}
-.noneyet{padding:14px;color:var(--label2);font-size:14px}
+.note{flex:none;margin:auto 16px 16px;font-size:12px;line-height:1.45;color:var(--label2)}
+.note b{color:var(--label);font-weight:600}
+
+/* bottom: zone switcher */
+.tabs{position:fixed;z-index:5;left:calc((100% - 384px) / 2);bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;
+  display:flex;gap:2px;padding:5px;border-radius:999px;max-width:calc(100% - 420px);overflow-x:auto;scrollbar-width:none;transition:opacity .6s var(--ease) .2s,transform .6s var(--ease) .2s}
+body.ready .tabs{opacity:1;transform:translateX(-50%)}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;display:flex;align-items:center;gap:6px;height:36px;padding:0 14px;border:0;border-radius:999px;background:none;font-size:15px;font-weight:500;cursor:pointer;color:var(--label)}
+.tabs button small{font-size:12px;font-weight:600;color:var(--label2)}
+.tabs button:hover{background:var(--fill)}
+.tabs button[aria-pressed="true"]{background:var(--tint);color:var(--tint-ink)}
+.tabs button[aria-pressed="true"] small{color:inherit;opacity:.8}
+
+.north{position:fixed;z-index:4;top:max(36px,calc(env(safe-area-inset-top,0px) + 24px));right:396px;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;pointer-events:none}
+.north svg{width:30px;height:30px}
+.maplibregl-ctrl-scale{background:transparent;border-color:var(--ink2);color:var(--ink2);font-family:var(--f-mono);font-size:10px}
+.maplibregl-ctrl-attrib{background:var(--glass)!important;color:var(--ink2)!important;font-size:10px}
+.maplibregl-ctrl-attrib a{color:var(--ink2)!important}
+.maplibregl-ctrl-bottom-left{left:max(36px,calc(env(safe-area-inset-left,0px) + 24px));bottom:28px}
+
+body.nomap .tabs,body.nomap .north,body.nomap .frame{display:none}
+body.nomap .rise{opacity:1;transform:none}
+
 @media (max-width:760px){
   body{overflow:auto}
-  .app{height:auto}
-  .stage{position:relative;height:64vh}
-  .titlebar{right:72px}
-  .tools{right:max(16px,env(safe-area-inset-right,0px))}
-  .tabs{left:50%;max-width:calc(100% - 32px)}
-  .empty{left:50%;width:calc(100% - 32px)}
-  .panel{position:static;width:auto;margin:12px;border-radius:22px;background:var(--card);box-shadow:none;border:0}
+  #map{position:fixed;height:62vh}
+  .fade{height:160px}
+  .titlebar{right:76px;left:20px;top:max(26px,calc(env(safe-area-inset-top,0px) + 18px))}
+  .titlebar p{display:none}
+  .north{right:20px;top:max(26px,calc(env(safe-area-inset-top,0px) + 18px))}
+  .panel{position:absolute;top:62vh;left:0;right:0;bottom:auto;width:auto;margin:-24px 0 0;border-radius:24px 24px 0 0;min-height:calc(38vh + 24px);
+    background:var(--bg);box-shadow:0 -10px 30px -12px rgba(0,0,0,.25);border:0;transform:none}
+  .list{overflow:visible}
+  .tabs{left:50%;bottom:auto;top:calc(62vh - 76px);max-width:calc(100% - 32px)}
+  .frame{display:none}
+  .maplibregl-ctrl-bottom-left{left:20px;bottom:96px}
 }
-@media (prefers-reduced-motion:reduce){.lbl3d,.tabs a{transition:none}}
+@media (prefers-reduced-motion:reduce){ .veil,.rise,.zt > *,.panel,.tabs,.gn{transition:none!important} }
 </style>
 </head>
 <body>
-<div class="app">
-  <main class="stage" id="stage">
-    <canvas id="view" aria-label="3D map of the zone. Drag to look around, pinch or scroll to zoom, tap a grave to open its record."></canvas>
-    <div id="labels"></div>
-    <header class="titlebar">
-      <ol class="crumbs"><li><a href="index.html">Sites</a></li></ol>
-      <h1 class="largetitle" id="siteName"></h1>
-      <p id="zoneSrc"></p>
-    </header>
-    <div class="tools">
-      <svg class="north glass" viewBox="0 0 44 44" aria-hidden="true">
-        <g id="needle"><path d="M22 8 27 24H17Z" fill="var(--danger)"/><path d="M22 36 27 24H17Z" fill="var(--label3)"/></g></svg>
-      <button class="cbtn icon glass" id="resetBtn" type="button" title="Reset view" aria-label="Reset view">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5v4.5h4.5"/></svg>
-      </button>
-    </div>
-    <nav class="tabs glass" id="tabs" aria-label="Zones"></nav>
-    <div class="empty glass" id="empty" hidden><h3 id="emptyTitle"></h3><p id="emptyText"></p></div>
-  </main>
-  <aside class="panel glass">
-    <header><small id="listTitle">Graves</small><h2 id="zoneTitle"></h2><p id="listNote"></p></header>
-    <details class="refmap" id="refmap" hidden><summary>Zone map</summary><img id="refimg" alt="" loading="lazy"></details>
-    <ol class="graves" id="graves"></ol>
-  </aside>
-</div>
+<div id="map" aria-label="3D map of the graveyard and its zones"></div>
+<div class="fade"></div>
+<div class="veil"></div>
+<div class="frame" aria-hidden="true"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<header class="titlebar">
+  <ol class="crumbs rise"><li><a href="index.html">Sites</a></li></ol>
+  <h1 class="rise" id="siteName"></h1>
+  <p class="rise" id="siteMeta"></p>
+</header>
+<div class="north glass" aria-hidden="true"><svg id="needle" viewBox="0 0 34 34"><path d="M17 4 21.5 17h-9Z" fill="var(--ink)"/><path d="M17 30 21.5 17h-9Z" fill="none" stroke="var(--ink)" stroke-width="1"/></svg></div>
+
+<nav class="tabs glass" id="tabs" aria-label="Zones"></nav>
+
+<aside class="panel glass" aria-live="polite">
+  <header><small id="pKicker"></small><h2 id="pTitle"></h2><p id="pNote"></p></header>
+  <button class="back" id="back" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19 8 12l7-7"/></svg>All zones</button>
+  <details class="refmap" id="refmap" hidden><summary>Zone map, as drawn</summary><img id="refimg" alt="" loading="lazy"></details>
+  <ol class="list" id="list"></ol>
+  <p class="note" id="note"></p>
+</aside>
+
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 <script src="assets/archive.js"></script>
-<script src="assets/models.js"></script>
+<script src="assets/map.js"></script>
 <script>
 (function(){
 const $ = id => document.getElementById(id);
-const site = Archive.site(Archive.params().site);
+const P = Archive.params(), site = Archive.site(P.site);
 if (!site) { location.replace('index.html'); return; }
-let zone = null;
+if (P.theme === 'light' || P.theme === 'dark') document.documentElement.dataset.theme = P.theme;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches, mobile = () => innerWidth <= 760;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const chev = '<svg class="chev" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m1 1 6 6-6 6"/></svg>';
+const G = MapKit.geo(site), L = G.labels, total = L.reduce((a, l) => a + l.graves.length, 0);
 
 document.title = site.name + ' · Zones';
 $('siteName').textContent = site.name;
-$('tabs').innerHTML = site.zones.map(z =>
-  `<a href="${Archive.siteURL(site, z)}" data-zone="${z.id}">${z.id}${z.graves.length ? `<small>${z.graves.length}</small>` : ''}</a>`).join('');
+$('siteMeta').textContent = `${site.place} · ${site.zones.length} zone${site.zones.length > 1 ? 's' : ''}${total ? ` · ${total} graves` : ''}`;
+$('tabs').innerHTML = `<button type="button" data-z="" aria-pressed="true">All</button>` +
+  site.zones.map(z => `<button type="button" data-z="${z.id}" aria-pressed="false">${z.id}${z.graves.length ? `<small>${z.graves.length}</small>` : ''}</button>`).join('');
 
-/* ---------- scene ---------- */
-const stage = $('stage'), canvas = $('view');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.outputEncoding = THREE.sRGBEncoding;
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(38, 1, .05, 500);
-const controls = new THREE.OrbitControls(camera, canvas);
-controls.enableDamping = true; controls.maxPolarAngle = Math.PI * .47;
-scene.add(new THREE.HemisphereLight(0xf3f1e8, 0x4f5a47, .85));
-const sun = new THREE.DirectionalLight(0xfff6e6, .9); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); scene.add(sun, sun.target);
-const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const ground = new THREE.Mesh(new THREE.CircleGeometry(60, 64), new THREE.ShadowMaterial({ opacity: .18 }));
-ground.rotation.x = -Math.PI / 2; ground.position.y = -.01; ground.receiveShadow = true; scene.add(ground);
-let zoneGroup = null, picks = [], marks = [], extent = 10;
-
-// on wide screens the grave panel covers the right of the map, so the view is centred on the part left of it
-function resize(){
-  const w = stage.clientWidth, h = stage.clientHeight, side = innerWidth > 760 ? 352 : 0;
-  renderer.setSize(w, h, false); camera.aspect = (w + side) / h;
-  if (side) camera.setViewOffset(w + side, h, side, 0, w, h); else camera.clearViewOffset();
-  camera.updateProjectionMatrix();
+/* ---------- the panel: zones, or one zone's graves ---------- */
+const placed = { sheet: 'Placed by the coordinate on its sheet', site: 'Placed at the site\'s reference point', template: 'Template plan, placed at the site\'s reference point' };
+function showZones(){
+  $('pKicker').textContent = site.place; $('pTitle').textContent = `${site.zones.length} zone${site.zones.length > 1 ? 's' : ''}`;
+  $('pNote').textContent = total ? `${total} graves across the site. Choose a zone to fly into it.` : 'Zone plans to come.';
+  $('back').hidden = true; $('refmap').hidden = true;
+  $('list').innerHTML = L.map(l => {
+    const z = l.zone, n = l.graves.length;
+    return `<li><button type="button" data-z="${z.id}"><span class="badge z${z.template ? ' tpl' : ''}">${z.id}</span>
+      <span class="t"><b>Zone ${z.id}</b><span>${n ? `${n} grave${n > 1 ? 's' : ''}` : 'Graves to come'} · ${z.template ? 'template plan' : 'traced plan'}</span></span>${chev}</button></li>`;
+  }).join('');
+  $('note').innerHTML = site.zones.some(z => !z.template)
+    ? '<b>How zones are placed.</b> Each zone plan is traced from its zone map and pinned to the coordinate recorded on its sheet, at the grave the sheet names. Plans are at approximate scale and phone-GPS coordinates can be several metres out, so neighbouring zones may overlap.'
+    : '<b>Template plans.</b> These zones are placeholders set at the site\'s reference point until their zone maps and coordinates arrive.';
+  bindList();
 }
-new ResizeObserver(resize).observe(stage);
-
-/* ---------- build a zone from its plan ---------- */
-function buildZone(z){
-  if (zoneGroup) scene.remove(zoneGroup);
-  zoneGroup = new THREE.Group(); picks = []; marks = [];
-  const b = z.boundary;
-  let cx = 0, cz = 0;
-  if (b) {
-    const xs = b.map(p => p[0]), zs = b.map(p => p[1]);
-    cx = (Math.min(...xs) + Math.max(...xs)) / 2; cz = (Math.min(...zs) + Math.max(...zs)) / 2;
-    extent = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
-    // zone floor, then a low wall along the boundary
-    const shape = new THREE.Shape(b.map(([x, zz]) => new THREE.Vector2(x - cx, -(zz - cz))));
-    const floor = new THREE.Mesh(new THREE.ShapeGeometry(shape), new THREE.MeshStandardMaterial({ color: new THREE.Color(css('--zone')), roughness: 1 }));
-    floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; zoneGroup.add(floor);
-    const wallMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(css(z.template ? '--wall' : '--mark')), roughness: .9 });   // template walls are muted
-    b.forEach((p, i) => {
-      const q = b[(i + 1) % b.length], dx = q[0] - p[0], dz = q[1] - p[1], len = Math.hypot(dx, dz);
-      const w = new THREE.Mesh(new THREE.BoxGeometry(len + .1, .3, .1), wallMat);
-      w.position.set((p[0] + q[0]) / 2 - cx, .15, (p[1] + q[1]) / 2 - cz); w.rotation.y = -Math.atan2(dz, dx);
-      w.castShadow = w.receiveShadow = true; zoneGroup.add(w);
-    });
-  } else extent = 10;
-  // structures and enclosures drawn on the zone map: pale, low and not clickable
-  const featMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(css('--wall')), roughness: 1, transparent: true, opacity: .55 });
-  (z.features || []).forEach(f => {
-    const box = new THREE.Mesh(new THREE.BoxGeometry(f.w, .08, f.d), featMat);
-    box.position.set(f.x - cx, .04, f.z - cz); box.receiveShadow = true; zoneGroup.add(box);
-  });
-  z.graves.forEach(g => {
-    if (!g.plan) return;
-    const m = GraveModels.build(g); m.position.set(g.plan.x - cx, 0, g.plan.z - cz); m.rotation.y = THREE.MathUtils.degToRad(g.plan.rot || 0);
-    m.traverse(o => { if (o.isMesh) { o.userData.n = g.n; o.material.userData.e0 = o.material.emissive.clone(); picks.push(o); } });
-    zoneGroup.add(m);
-    const top = new THREE.Box3().setFromObject(m).max.y;
-    const el = document.createElement('button'); el.type = 'button'; el.className = 'lbl3d' + (Archive.hasRecord(g) ? ' rec' : ''); el.textContent = g.n;
-    el.setAttribute('aria-label', `Open grave ${g.n}`); el.addEventListener('click', () => open(g.n));
-    el.addEventListener('mouseenter', () => hot(g.n)); el.addEventListener('mouseleave', () => hot(null));
-    marks.push({ n: g.n, el, at: new THREE.Vector3(g.plan.x - cx, top + .25, g.plan.z - cz) });
-  });
-  $('labels').replaceChildren(...marks.map(m => m.el));
-  scene.add(zoneGroup); fitView();
-}
-function fitView(){
-  const r = Math.max(extent, 2), dist = r / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) * 1.25;
-  camera.position.set(0, 0, 0).add(new THREE.Vector3(.35, 1.05, 1).normalize().multiplyScalar(dist));
-  controls.target.set(0, 0, 0); controls.minDistance = 1; controls.maxDistance = r * 4; controls.update();
-  sun.position.set(r * .8, r * 2, r * 1.1); const sc = sun.shadow.camera;
-  sc.left = sc.bottom = -r; sc.right = sc.top = r; sc.near = .1; sc.far = r * 6; sc.updateProjectionMatrix();
-}
-
-/* ---------- side list ---------- */
-function renderList(z){
-  const gs = [...z.graves].sort((a, b) => a.n - b.n);
-  $('listTitle').textContent = site.name;
+function showZone(l){
+  const z = l.zone, gs = [...l.graves].sort((a, b) => a.n - b.n);
+  $('pKicker').textContent = site.name; $('pTitle').textContent = `Zone ${z.id}`;
+  $('pNote').textContent = (gs.length ? `${gs.length} grave${gs.length > 1 ? 's' : ''}, in the order of the zone plan. ` : '') + placed[l.how] + (z.coordsFrom && l.how === 'sheet' ? `, taken at ${z.coordsFrom}` : '') + '.';
+  $('back').hidden = false;
   $('refmap').hidden = !z.map; if (z.map) { $('refimg').src = z.map; $('refimg').alt = `Zone ${z.id} map, as drawn on the sheet`; }
-  $('listNote').textContent = gs.length ? `${gs.length} graves, in the order of the zone plan. ${gs.filter(Archive.hasRecord).length} with a full record.` : 'Number of graves to come.';
-  $('graves').innerHTML = gs.length ? gs.map(g => {
-    const rec = Archive.hasRecord(g);
-    const sub = g.scan ? `3D scan${g.sheet ? ' · Sheet ' + g.sheet : ''}` : rec ? 'Record' : g.templated ? 'Placed on template · record to come' : 'Default model · record to come';
-    return `<li class="${rec ? 'rec' : ''}"><a href="${Archive.graveURL(site, z, g)}" data-n="${g.n}"><span class="n">${g.n}</span>
-      <span class="t"><b>Grave ${g.n}</b><span>${sub}</span></span><svg class="chev" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m1 1 6 6-6 6"/></svg></a></li>`;
-  }).join('') : '<li class="noneyet">No graves listed for this zone yet.</li>';
-  $('graves').querySelectorAll('a').forEach(a => {
-    a.addEventListener('mouseenter', () => hot(+a.dataset.n)); a.addEventListener('mouseleave', () => hot(null));
+  $('list').innerHTML = gs.length ? gs.map(g => {
+    const grave = Archive.grave(z, g.n), sub = grave.scan ? `3D scan${grave.sheet ? ' · Sheet ' + grave.sheet : ''}` : g.rec ? 'Record' : 'Default model · record to come';
+    return `<li><a href="${Archive.graveURL(site, z, grave)}" data-n="${g.n}"><span class="badge${g.rec ? ' rec' : ''}">${g.n}</span>
+      <span class="t"><b>Grave ${g.n}</b><span>${sub}</span></span>${chev}</a></li>`;
+  }).join('') : '<li><span class="t" style="padding:14px"><span>No graves listed for this zone yet.</span></span></li>';
+  $('note').innerHTML = z.coordsCheck ? `<b>To check.</b> ${esc(z.coordsCheck)}: this zone may sit on top of another until its coordinate is confirmed.` : '';
+  bindList();
+}
+function bindList(){
+  $('list').querySelectorAll('button[data-z]').forEach(b => {
+    b.addEventListener('click', () => focusZone(b.dataset.z));
+    b.addEventListener('mouseenter', () => hotZone(b.dataset.z)); b.addEventListener('mouseleave', () => hotZone(null));
+  });
+  $('list').querySelectorAll('a[data-n]').forEach(a => {
+    a.addEventListener('mouseenter', () => hotGrave(+a.dataset.n)); a.addEventListener('mouseleave', () => hotGrave(null));
+  });
+}
+$('back').addEventListener('click', () => focusZone(''));
+$('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) focusZone(b.dataset.z); });
+
+/* ---------- the map ---------- */
+const c = MapKit.palette();
+const all = new maplibregl.LngLatBounds(); L.forEach(l => { all.extend(l.bounds[0]); all.extend(l.bounds[1]); });
+let map;
+try {
+  map = new maplibregl.Map({ container: 'map', style: MapKit.style(c, { exaggeration: 1, villagesFrom: 14, buildingOpacity: .8 }),
+    center: all.getCenter(), zoom: 15.2, pitch: 40, bearing: -22, maxZoom: 22.5, maxPitch: 78, attributionControl: { compact: true },
+    canvasContextAttributes: { antialias: true } });
+} catch (e) { document.body.classList.add('nomap', 'ready', 'landed'); showZones(); return; }
+map.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: 'metric' }), 'bottom-left');
+const failTimer = setTimeout(() => { if (!map.loaded()) document.body.classList.add('nomap', 'ready', 'landed'); }, 12000);
+
+function addLayers(){
+  map.addSource('zones', { type: 'geojson', data: G.zones });
+  map.addSource('graves', { type: 'geojson', data: G.graves });
+  const st = (k, on, off) => ['case', ['boolean', ['feature-state', k], false], on, off];
+  map.addLayer({ id: 'zone-fill', type: 'fill', source: 'zones',
+    paint: { 'fill-color': c.mark, 'fill-opacity': ['case', ['boolean', ['feature-state', 'dim'], false], .04, st('hot', .3, st('on', .2, .14))], 'fill-opacity-transition': { duration: 300 } } });
+  map.addLayer({ id: 'zone-line', type: 'line', source: 'zones', filter: ['!', ['get', 'template']], layout: { 'line-join': 'round' },
+    paint: { 'line-color': c.mark, 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 16, 1.2, 20, 3, 22, 6],
+             'line-opacity': ['case', ['boolean', ['feature-state', 'dim'], false], .25, 1] } });
+  map.addLayer({ id: 'zone-line-tpl', type: 'line', source: 'zones', filter: ['get', 'template'],
+    paint: { 'line-color': c.label, 'line-width': 1.4, 'line-dasharray': [3, 2] } });
+  map.addLayer({ id: 'graves-3d', type: 'fill-extrusion', source: 'graves', minzoom: 15,
+    paint: { 'fill-extrusion-color': st('hot', c.mark, ['case', ['get', 'rec'], c.mark, c.stone]),
+             'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 15, 0, 17, ['get', 'h']],
+             'fill-extrusion-opacity': .95, 'fill-extrusion-vertical-gradient': true } });
+}
+
+/* zone tags (overview) and grave numbers (inside a zone) */
+const tags = L.map((l, k) => {
+  const el = document.createElement('div'); el.className = 'zt' + (l.zone.template ? ' tpl' : '');
+  el.style.setProperty('--stem', (26 + (k % 3) * 30) + 'px');
+el.innerHTML = `<div class="zt-tag glass"><b>${l.zone.id}</b>Zone ${l.zone.id}<small>${l.graves.length || ''}</small></div><i class="zt-stem"></i>`;
+  [...el.children].forEach(ch => ch.style.transitionDelay = (.05 * k) + 's');
+  el.addEventListener('click', () => focusZone(l.zone.id));
+  el.addEventListener('mouseenter', () => hotZone(l.zone.id)); el.addEventListener('mouseleave', () => hotZone(null));
+  return new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat(l.centre);
+});
+let nums = [];
+function showNums(l){
+  nums.forEach(m => m.remove()); nums = [];
+  if (!l) return;
+  nums = l.graves.map(g => {
+    const el = document.createElement('button'); el.type = 'button'; el.className = 'gn' + (g.rec ? ' rec' : ''); el.textContent = g.n;
+    el.setAttribute('aria-label', `Open grave ${g.n}`);
+    el.addEventListener('click', () => openGrave(l.zone, g.n));
+    el.addEventListener('mouseenter', () => hotGrave(g.n)); el.addEventListener('mouseleave', () => hotGrave(null));
+    el.dataset.n = g.n;
+    return new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -6] }).setLngLat(g.at).addTo(map);
   });
 }
 
-function selectZone(id, push){
-  zone = Archive.zone(site, id) || site.zones.find(z => z.graves.length) || site.zones[0];
-  document.querySelectorAll('#tabs a').forEach(a => { if (a.dataset.zone === zone.id) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
-  if (push) history.pushState(null, '', Archive.siteURL(site, zone));
-  $('zoneTitle').textContent = 'Zone ' + zone.id;
-  $('zoneSrc').textContent = zone.template ? 'Template plan · actual zone plan to come' : `Traced from ${zone.source} · approximate scale`;
-  $('empty').hidden = !zone.template;
-  if (zone.template) {
-    $('emptyTitle').textContent = 'Template plan';
-    $('emptyText').textContent = zone.graves.length ? 'Graves are set out in rows until the zone plan is traced.'
-      : 'The boundary and graves will be updated once the site plan for this zone is added.';
+/* camera */
+const padding = () => mobile() ? { top: 110, bottom: 90, left: 30, right: 30 } : { top: 150, bottom: 110, left: 80, right: 440 };
+function frame(bounds, opts){
+  const cam = map.cameraForBounds(bounds, { padding: padding(), bearing: opts.bearing }) || {};
+  return { center: cam.center || bounds.getCenter(), zoom: Math.min(opts.max || 21, (cam.zoom || 18) - (opts.less || 0)), bearing: opts.bearing, pitch: opts.pitch };
+}
+let current = null, bearing = -22;
+function focusZone(id){
+  const l = L.find(x => x.zone.id === id) || null; current = l;
+  document.querySelectorAll('#tabs button').forEach(b => {
+    const on = b.dataset.z === (l ? l.zone.id : ''); b.setAttribute('aria-pressed', String(on));
+    if (on) $('tabs').scrollTo({ left: b.offsetLeft - ($('tabs').clientWidth - b.offsetWidth) / 2, behavior: reduced ? 'auto' : 'smooth' });
+  });
+  history.replaceState(null, '', Archive.siteURL(site, l ? l.zone : null));
+  L.forEach(x => { map.setFeatureState({ source: 'zones', id: x.i }, { on: x === l, dim: !!l && x !== l }); });
+  document.body.classList.toggle('zoomed', !!l);
+  if (l) {
+    showZone(l); showNums(l);
+    const b = new maplibregl.LngLatBounds(l.bounds[0], l.bounds[1]);
+    map.flyTo({ ...frame(b, { bearing: map.getBearing(), pitch: 58, max: 21.6, less: .15 }), duration: reduced ? 0 : 1300, curve: 1.3, essential: true });
+  } else {
+    showZones(); showNums(null);
+    map.flyTo({ ...frame(all, { bearing: map.getBearing(), pitch: 55, max: 20, less: .1 }), duration: reduced ? 0 : 1200, curve: 1.3, essential: true });
   }
-  buildZone(zone); renderList(zone);
 }
-$('tabs').addEventListener('click', e => { const a = e.target.closest('a'); if (!a || e.metaKey || e.ctrlKey) return; e.preventDefault(); selectZone(a.dataset.zone, true); });
-addEventListener('popstate', () => selectZone(Archive.params().zone));
-$('resetBtn').addEventListener('click', fitView);
+function openGrave(z, n){ const g = Archive.grave(z, n); if (g) location.href = Archive.graveURL(site, z, g); }
 
-/* ---------- hover and click ---------- */
-let hotN = null;
-function hot(n){
-  if (n === hotN) return; hotN = n;
-  const tint = new THREE.Color(css('--mark'));
-  picks.forEach(o => o.userData.n === n ? o.material.emissive.copy(tint).multiplyScalar(.35) : o.material.emissive.copy(o.material.userData.e0));
-  marks.forEach(m => m.el.classList.toggle('hot', m.n === n));
-  document.querySelectorAll('#graves a').forEach(a => a.classList.toggle('hot', +a.dataset.n === n));
-  canvas.style.cursor = n !== null ? 'pointer' : 'grab';
+/* hover, both ways between the map and the list */
+let hz = null, hg = null;
+function hotZone(id){
+  if (hz !== null) map.setFeatureState({ source: 'zones', id: hz }, { hot: false });
+  const l = L.find(x => x.zone.id === id); hz = l ? l.i : null;
+  if (l) map.setFeatureState({ source: 'zones', id: l.i }, { hot: true });
+  tags.forEach((t, k) => t.getElement().classList.toggle('hot', L[k].zone.id === id));
+  document.querySelectorAll('#list button[data-z]').forEach(b => b.classList.toggle('hot', b.dataset.z === id));
+  map.getCanvas().style.cursor = l ? 'pointer' : '';
 }
-function open(n){ const g = Archive.grave(zone, n); if (g) location.href = Archive.graveURL(site, zone, g); }
-const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
-function pick(e){
-  const r = canvas.getBoundingClientRect(); ndc.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
-  ray.setFromCamera(ndc, camera); const h = ray.intersectObjects(picks, false)[0]; return h ? h.object.userData.n : null;
+function hotGrave(n){
+  if (hg !== null) map.setFeatureState({ source: 'graves', id: hg }, { hot: false });
+  const g = current && current.graves.find(x => x.n === n); hg = g ? g.id : null;
+  if (g) map.setFeatureState({ source: 'graves', id: g.id }, { hot: true });
+  nums.forEach(m => m.getElement().classList.toggle('hot', +m.getElement().dataset.n === n));
+  document.querySelectorAll('#list a[data-n]').forEach(a => a.classList.toggle('hot', +a.dataset.n === n));
+  map.getCanvas().style.cursor = g ? 'pointer' : '';
 }
-let downAt = null;
-canvas.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' && !e.buttons) hot(pick(e)); });
-canvas.addEventListener('pointerleave', () => hot(null));
-canvas.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; });
-canvas.addEventListener('pointerup', e => {
-  if (!downAt) return; const moved = Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]); downAt = null;
-  if (moved < 6 && e.button === 0) { const n = pick(e); if (n !== null) open(n); }
+map.on('mousemove', e => {
+  if (!map.getLayer('graves-3d')) return;
+  const gf = current && map.queryRenderedFeatures(e.point, { layers: ['graves-3d'] }).find(f => f.properties.zone === current.zone.id);
+  if (gf) { hotZone(null); hotGrave(gf.properties.n); return; }
+  hotGrave(null);
+  const zf = !current && map.queryRenderedFeatures(e.point, { layers: ['zone-fill'] })[0];
+  hotZone(zf ? zf.properties.zone : null);
 });
+map.on('click', e => {
+  if (!map.getLayer('graves-3d')) return;
+  const gf = map.queryRenderedFeatures(e.point, { layers: ['graves-3d'] })[0];
+  if (gf && current && gf.properties.zone === current.zone.id) { openGrave(current.zone, gf.properties.n); return; }
+  const zf = map.queryRenderedFeatures(e.point, { layers: ['zone-fill'] })[0];
+  if (zf && (!current || zf.properties.zone !== current.zone.id)) focusZone(zf.properties.zone);
+});
+map.on('move', () => { $('needle').style.transform = `rotate(${-map.getBearing()}deg)`; });
+addEventListener('keydown', e => { if (e.key === 'Escape' && current) focusZone(''); });
 
-/* ---------- loop ---------- */
-const v = new THREE.Vector3();
-function loop(){
-  requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera);
-  const W = stage.clientWidth, H = stage.clientHeight;
-  marks.forEach(m => { v.copy(m.at).project(camera); m.el.hidden = v.z > 1; m.el.style.transform = `translate(${(v.x * .5 + .5) * W}px,${(-v.y * .5 + .5) * H}px)`; });
-  $('needle').style.transform = `rotate(${(zone.north || 0) + THREE.MathUtils.radToDeg(controls.getAzimuthalAngle())}deg)`;
-}
-
-resize(); selectZone(Archive.params().zone); requestAnimationFrame(loop);
+/* the entry: a quick descent from the front page's view onto the site, then the zones light up */
+showZones();
+map.on('load', () => {
+  clearTimeout(failTimer); addLayers();
+  document.querySelectorAll('.maplibregl-ctrl-attrib').forEach(a => a.classList.remove('maplibregl-compact-show'));
+  document.body.classList.add('ready');
+  tags.forEach(t => t.addTo(map));
+  const start = Archive.zone(site, P.zone);
+  map.flyTo({ ...frame(all, { bearing, pitch: 55, max: 20, less: .1 }), duration: reduced ? 0 : 1600, curve: 1.2, essential: true });
+  map.once('moveend', () => { document.body.classList.add('landed'); if (start) setTimeout(() => focusZone(start.id), reduced ? 0 : 250); });
+});
 })();
 </script>
 </body>
