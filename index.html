@@ -12,225 +12,280 @@
 <title>An Ode to the Dead</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: full-height model viewer; the drawing sheet sits hidden behind the grave and is pulled out to fill the screen. */
+/* Layout: the scan fills the screen edge to edge; all chrome floats above it on translucent glass —
+   large title top-left, a capsule toolbar bottom-centre, contextual bars at the top when a record is open. */
 :root{
-  --bg:#e7eae2; --bg2:#d5dacd; --surface:#f8f9f4; --ink:#1e2620; --muted:#5b665a; --line:#c6ccbf;
-  --accent:#3d6a4d; --accent-ink:#ffffff; --mark:#a87a26;
-  /* the drawing sheet is paper in both themes */
-  --paper:#fbfbf6; --paper-ink:#1e2620; --paper-muted:#5d675c; --paper-line:#cfd3c6; --paper-accent:#3d6a4d; --paper-mark:#9a6f20;
-  --f-display:"Young Serif", Georgia, "Times New Roman", serif;
-  --f-body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --bg:#f5f5f7; --bg2:#e3e3e8;
+  --label:#1d1d1f; --label2:#6e6e73; --label3:#aeaeb2;
+  --glass:rgba(255,255,255,.72); --glass-strong:rgba(255,255,255,.9); --hair:rgba(0,0,0,.08); --fill:rgba(118,118,128,.12); --fill2:rgba(118,118,128,.2);
+  --tint:#0071e3; --tint-ink:#ffffff; --mark:#ff9500; --danger:#ff3b30;
+  --shadow:0 10px 40px -8px rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.06);
+  --f-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif;
+  --f-text:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;
+  --ease:cubic-bezier(.32,.72,0,1);
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#131714; --bg2:#1c221d; --surface:#1b211c; --ink:#e3e8de; --muted:#9aa596; --line:#2f3830;
-  --accent:#86b693; --accent-ink:#0f1610; --mark:#d8ab4f; color-scheme:dark}}
+  --bg:#1c1c1e; --bg2:#000000; --label:#f5f5f7; --label2:#98989d; --label3:#636366;
+  --glass:rgba(36,36,38,.7); --glass-strong:rgba(44,44,46,.92); --hair:rgba(255,255,255,.1); --fill:rgba(118,118,128,.24); --fill2:rgba(118,118,128,.36);
+  --tint:#0a84ff; --tint-ink:#ffffff; --mark:#ff9f0a; --danger:#ff453a;
+  --shadow:0 10px 40px -8px rgba(0,0,0,.6),0 2px 6px rgba(0,0,0,.3); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#131714; --bg2:#1c221d; --surface:#1b211c; --ink:#e3e8de; --muted:#9aa596; --line:#2f3830;
-  --accent:#86b693; --accent-ink:#0f1610; --mark:#d8ab4f; color-scheme:dark}
+  --bg:#1c1c1e; --bg2:#000000; --label:#f5f5f7; --label2:#98989d; --label3:#636366;
+  --glass:rgba(36,36,38,.7); --glass-strong:rgba(44,44,46,.92); --hair:rgba(255,255,255,.1); --fill:rgba(118,118,128,.24); --fill2:rgba(118,118,128,.36);
+  --tint:#0a84ff; --tint-ink:#ffffff; --mark:#ff9f0a; --danger:#ff453a;
+  --shadow:0 10px 40px -8px rgba(0,0,0,.6),0 2px 6px rgba(0,0,0,.3); color-scheme:dark}
 
 html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;overflow:hidden}
-.app{position:relative;height:100%;display:flex;flex-direction:column}
-button,input,textarea{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+body{background:var(--bg);color:var(--label);font-family:var(--f-text);font-size:15px;line-height:1.4;letter-spacing:-.01em;
+  overflow:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+button,input,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+button{-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--tint) 55%,transparent);outline-offset:2px}
+.app{position:relative;height:100%}
 
-.bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-block:12px;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
-  border-bottom:1px solid var(--line);background:var(--surface);z-index:5}
-.brand{display:flex;flex-direction:column;min-width:0;margin-right:auto}
-.brand small{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.brand h1{font-family:var(--f-display);font-weight:400;font-size:20px;margin:0;line-height:1.2}
-.actions{display:flex;gap:8px;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:transparent;
-  padding:8px 14px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:500;color:var(--ink)}
-.btn:hover{border-color:var(--accent)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.btn svg{width:16px;height:16px;flex:none}
+/* translucent material */
+.glass{background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);
+  border:.5px solid var(--hair);box-shadow:var(--shadow)}
 
-/* Stage: background → hidden sheet → 3D canvas (transparent, so the grave hides the sheet) → scrim → sheet when pulled out */
-.stage{position:relative;flex:1;min-height:0;isolation:isolate;overflow:hidden;
-  background:radial-gradient(ellipse 80% 70% at 50% 62%, var(--bg) 0%, var(--bg2) 100%)}
+/* stage fills the screen */
+.stage{position:absolute;inset:0;isolation:isolate;overflow:hidden;
+  background:radial-gradient(ellipse 90% 75% at 50% 55%, var(--bg) 0%, var(--bg2) 100%)}
 #view{position:relative;z-index:2;display:block;width:100%;height:100%;touch-action:none}
-.stage.drag::after{content:"Drop the .obj with its .mtl and textures, or a .glb";position:absolute;inset:12px;z-index:9;border:2px dashed var(--accent);
-  border-radius:10px;display:grid;place-items:center;font-family:var(--f-mono);color:var(--accent);background:color-mix(in srgb,var(--bg) 80%,transparent)}
-.pin{position:absolute;left:0;top:0;z-index:3;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;border:0;background:none;padding:0}
-.pin span{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;background:var(--ink);color:var(--bg);padding:3px 8px;border-radius:4px;white-space:nowrap}
-.pin i{width:12px;height:12px;border-radius:50%;background:var(--mark);box-shadow:0 0 0 4px color-mix(in srgb,var(--mark) 30%,transparent);animation:pulse 2s infinite}
-@keyframes pulse{50%{box-shadow:0 0 0 9px color-mix(in srgb,var(--mark) 0%,transparent)}}
-.hud{position:absolute;z-index:3;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:max(16px,env(safe-area-inset-left,0px));
-  font-family:var(--f-mono);font-size:11px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap;pointer-events:none}
-.north{position:absolute;z-index:3;top:14px;right:max(16px,env(safe-area-inset-right,0px));width:44px;height:44px;pointer-events:none}
-.status{position:absolute;z-index:3;top:14px;left:max(16px,env(safe-area-inset-left,0px));font-family:var(--f-mono);font-size:12px;
-  background:var(--surface);border:1px solid var(--line);padding:6px 10px;border-radius:6px;max-width:calc(100% - 100px)}
-.status.err{border-color:#b4473a;color:#b4473a}
-.tourcard{position:absolute;z-index:6;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));
-  width:min(430px,calc(100% - 32px));background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:14px 16px;
-  display:flex;flex-direction:column;gap:8px;box-shadow:0 14px 36px -14px rgba(8,12,9,.45)}
-.tc-top{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.tc-time{font-variant-numeric:tabular-nums}
-.tc-segs{display:flex;gap:4px}
-.tc-segs span{flex:1;height:3px;background:var(--line);border-radius:2px;overflow:hidden}
-.tc-segs i{display:block;height:100%;width:0;background:var(--accent)}
-.tourcard h3{font-family:var(--f-display);font-weight:400;font-size:21px;line-height:1.2;margin:2px 0 0;text-wrap:balance}
-.tourcard p{margin:0;font-size:14.5px;line-height:1.55}
-.tc-ctl{display:flex;align-items:center;gap:6px;margin-top:4px}
-.tc-ctl button{display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--ink);cursor:pointer}
-.tc-ctl button:hover:not(:disabled){border-color:var(--accent)}
-.tc-ctl button:disabled{opacity:.35;cursor:not-allowed}
-.tc-ctl .exit{width:auto;padding:0 12px;margin-left:auto;font-size:13px;font-weight:500}
-body.touring .hud{display:none}
-.tourcard.compact{width:auto;max-width:calc(100% - 32px)}
-.tourcard.compact p,.tourcard.compact .tc-segs,.tourcard.compact .tc-top{display:none}
-/* photographs: a dot where each was taken; the photo crossfades over the matching 3D view */
-.pdot{position:absolute;left:0;top:0;z-index:3;width:30px;height:30px;margin:-15px 0 0 -15px;border:0;padding:0;background:none;cursor:pointer;display:grid;place-items:center}
-.pdot i{width:14px;height:14px;border-radius:50%;background:var(--surface);border:3px solid var(--mark);box-shadow:0 1px 4px rgba(0,0,0,.35);transition:transform .15s}
-.pdot:hover i,.pdot:focus-visible i{transform:scale(1.3)}
-.pdot span{position:absolute;left:50%;bottom:calc(100% + 2px);transform:translateX(-50%);white-space:nowrap;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;
-  background:var(--ink);color:var(--bg);padding:3px 8px;border-radius:4px;opacity:0;pointer-events:none;transition:opacity .15s}
-.pdot:hover span,.pdot:focus-visible span{opacity:1}
-.photo{position:absolute;inset:0;z-index:4;opacity:0;transition:opacity .8s ease;cursor:zoom-out;touch-action:none}
+.stage.drag::after{content:"Drop the .obj with its .mtl and textures, or a .glb";position:absolute;inset:16px;z-index:9;border:2px dashed var(--tint);
+  border-radius:24px;display:grid;place-items:center;font-weight:600;color:var(--tint);background:color-mix(in srgb,var(--bg) 82%,transparent)}
+
+/* large title, floating */
+.titlebar{position:absolute;z-index:5;top:calc(20px + env(safe-area-inset-top,0px));left:max(24px,env(safe-area-inset-left,0px));right:max(24px,env(safe-area-inset-right,0px));
+  pointer-events:none;transition:opacity .4s var(--ease),transform .4s var(--ease)}
+.titlebar h1{font-family:var(--f-display);font-weight:700;font-size:34px;line-height:1.1;letter-spacing:-.025em;margin:0;text-wrap:balance}
+.titlebar p{margin:4px 0 0;font-size:15px;color:var(--label2);letter-spacing:-.01em}
+body.recordopen .titlebar,body.touring .titlebar{opacity:0;transform:translateY(-8px)}
+
+/* toolbar: a capsule of glass, bottom centre */
+.toolbar{position:absolute;z-index:6;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+  display:flex;align-items:center;gap:4px;padding:6px;border-radius:999px;max-width:calc(100% - 32px);
+  transition:opacity .35s var(--ease),transform .35s var(--ease)}
+body.recordopen .toolbar,body.touring .toolbar{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(16px)}
+.tb{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:44px;min-width:44px;padding:0 14px;border:0;border-radius:999px;
+  background:transparent;color:var(--label);font-size:15px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .2s,transform .15s var(--ease)}
+.tb:hover{background:var(--fill)}
+.tb:active{transform:scale(.96);background:var(--fill2)}
+.tb svg{width:20px;height:20px;flex:none}
+.tb.icon{padding:0;width:44px}
+.tb.primary{background:var(--tint);color:var(--tint-ink);font-weight:600;padding:0 20px}
+.tb.primary:hover{background:color-mix(in srgb,var(--tint) 88%,#000)}
+.tsep{width:1px;height:24px;background:var(--hair);margin:0 4px}
+
+/* hidden sheet → canvas → scrim → sheet in front */
+.scrim{position:absolute;inset:0;z-index:3;background:color-mix(in srgb,var(--bg2) 55%,transparent);
+  -webkit-backdrop-filter:blur(14px) saturate(120%);backdrop-filter:blur(14px) saturate(120%);opacity:0;pointer-events:none;transition:opacity .5s var(--ease)}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;top:0;z-index:1;transform-origin:50% 50%;will-change:transform;background:#fff;border-radius:3px;
+  box-shadow:0 1px 3px rgba(0,0,0,.12),0 30px 80px -20px rgba(0,0,0,.45)}
+.sheet.front{z-index:4}
+.sheet img{display:block;width:100%;height:100%;object-fit:contain;border-radius:3px;user-select:none;-webkit-user-drag:none}
+
+/* record pin: a map-style callout over the grave */
+.pin{position:absolute;left:0;top:0;z-index:3;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;border:0;background:none;padding:0}
+.pin .callout{display:flex;flex-direction:column;align-items:flex-start;padding:7px 14px 8px;border-radius:14px;text-align:left}
+.pin .callout b{font-size:13px;font-weight:600;letter-spacing:-.01em;white-space:nowrap}
+.pin .callout small{font-size:12px;color:var(--label2);white-space:nowrap}
+.pin i{width:12px;height:12px;border-radius:50%;background:var(--mark);border:2px solid #fff;box-shadow:0 0 0 0 color-mix(in srgb,var(--mark) 45%,transparent),0 1px 4px rgba(0,0,0,.3);animation:pulse 2.2s var(--ease) infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--mark) 45%,transparent),0 1px 4px rgba(0,0,0,.3)}70%,100%{box-shadow:0 0 0 12px color-mix(in srgb,var(--mark) 0%,transparent),0 1px 4px rgba(0,0,0,.3)}}
+
+/* photographs: a dot where each was taken */
+.pdot{position:absolute;left:0;top:0;z-index:3;width:44px;height:44px;margin:-22px 0 0 -22px;border:0;padding:0;background:none;cursor:pointer;display:grid;place-items:center}
+.pdot i{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--mark);border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);transition:transform .2s var(--ease)}
+.pdot i svg{width:13px;height:13px;color:#fff}
+.pdot:hover i,.pdot:focus-visible i{transform:scale(1.15)}
+.pdot span{position:absolute;left:50%;bottom:calc(100% - 2px);transform:translate(-50%,4px);white-space:nowrap;font-size:13px;font-weight:500;
+  padding:6px 12px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s var(--ease)}
+.pdot:hover span,.pdot:focus-visible span{opacity:1;transform:translate(-50%,0)}
+.photo{position:absolute;inset:0;z-index:4;opacity:0;transition:opacity .8s var(--ease);cursor:zoom-out;touch-action:none}
 .photo.on{opacity:1}
 .photo.peekscan{opacity:0;transition:opacity .25s}
 .photo img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:contain;display:block;user-select:none;-webkit-user-drag:none}
 .photo.align{opacity:.55;pointer-events:none;transition:none}
-.obmid{align-self:center;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.04em;background:var(--surface);color:var(--ink);border:1px solid var(--line);
-  padding:6px 10px;border-radius:6px;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+
+/* contextual bar at the top (record open, photo open, aligning) */
+.openbar{position:absolute;z-index:6;top:calc(16px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;justify-content:space-between;align-items:center;gap:8px;pointer-events:none}
+.openbar button{pointer-events:auto;display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 16px 0 12px;border-radius:999px;
+  border:.5px solid var(--hair);background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);
+  box-shadow:var(--shadow);color:var(--tint);cursor:pointer;font-size:15px;font-weight:500;transition:transform .15s var(--ease)}
+.openbar button:active{transform:scale(.96)}
+.openbar button.fill{background:var(--tint);color:var(--tint-ink);border-color:transparent;padding:0 18px}
+.openbar button svg{width:18px;height:18px}
+.obmid{font-size:13px;font-weight:500;color:var(--label);padding:9px 16px;border-radius:999px;pointer-events:none;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 @media (max-width:640px){.obmid{display:none}}
-@media (prefers-reduced-motion:reduce){.photo{transition:none}}
-.hintbar{position:absolute;z-index:3;left:50%;bottom:calc(44px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
-  font-family:var(--f-mono);font-size:11.5px;letter-spacing:.03em;background:var(--ink);color:var(--bg);padding:6px 12px;border-radius:4px;
+
+/* small floating messages */
+.capsule{position:absolute;z-index:5;left:50%;transform:translateX(-50%);font-size:13px;font-weight:500;padding:9px 16px;border-radius:999px;
   white-space:nowrap;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis;pointer-events:none}
-.scrim{position:absolute;inset:0;z-index:3;background:color-mix(in srgb,var(--bg2) 72%,transparent);opacity:0;pointer-events:none;transition:opacity .45s}
-.scrim.on{opacity:1;pointer-events:auto}
+.hintbar{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+.status{top:calc(24px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:10px;font-variant-numeric:tabular-nums}
+.status::before{content:"";width:14px;height:14px;border-radius:50%;border:2px solid var(--fill2);border-top-color:var(--label2);animation:spin .9s linear infinite}
+.status.err{color:var(--danger)}
+.status.err::before{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-/* The drawing sheet */
-.sheet{position:absolute;left:0;top:0;z-index:1;transform-origin:50% 50%;will-change:transform;background:#fff;
-  box-shadow:0 1px 2px rgba(0,0,0,.14),0 24px 60px -12px rgba(10,16,11,.5)}
-.sheet.front{z-index:4}
-.sheet img{display:block;width:100%;height:100%;object-fit:contain;user-select:none;-webkit-user-drag:none}
-.openbar{position:absolute;z-index:5;top:14px;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));
-  display:flex;justify-content:space-between;gap:8px;pointer-events:none}
-.openbar button{pointer-events:auto;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);
-  padding:7px 12px;border-radius:6px;cursor:pointer;font-size:13.5px;font-weight:500}
-.openbar button:hover{border-color:var(--accent)}
+/* guided tour: a glass card */
+.tourcard{position:absolute;z-index:6;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  width:min(400px,calc(100% - 32px));border-radius:24px;padding:18px 20px 16px;display:flex;flex-direction:column;gap:10px}
+.tc-segs{display:flex;gap:4px}
+.tc-segs span{flex:1;height:3px;background:var(--fill2);border-radius:2px;overflow:hidden}
+.tc-segs i{display:block;height:100%;width:0;background:var(--label)}
+.tc-top{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:500;color:var(--label2)}
+.tc-time{font-variant-numeric:tabular-nums}
+.tourcard h3{font-family:var(--f-display);font-weight:700;font-size:22px;line-height:1.15;letter-spacing:-.02em;margin:0;text-wrap:balance}
+.tourcard p{margin:0;font-size:15px;line-height:1.45;color:var(--label);opacity:.85}
+.tc-ctl{display:flex;align-items:center;gap:8px;margin-top:6px}
+.tc-ctl button{display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:var(--fill);color:var(--label);cursor:pointer;transition:transform .15s var(--ease),background .2s}
+.tc-ctl button:hover:not(:disabled){background:var(--fill2)}
+.tc-ctl button:active:not(:disabled){transform:scale(.94)}
+.tc-ctl button:disabled{opacity:.3;cursor:default}
+.tc-ctl #tcPlay{background:var(--label);color:var(--bg)}
+.tc-ctl .exit{width:auto;padding:0 18px;margin-left:auto;border-radius:999px;background:transparent;color:var(--tint);font-weight:600;font-size:15px}
+.tc-ctl .exit:hover{background:var(--fill)}
+.tourcard.compact{width:auto;padding:12px 14px}
+.tourcard.compact p,.tourcard.compact .tc-segs,.tourcard.compact .tc-top{display:none}
+.tourcard.compact h3{font-size:17px}
 
-@media (max-width:760px){
-  .brand h1{font-size:17px}
-  .btn .lbl{display:none}
-}
-
-dialog{border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0;width:min(560px,calc(100% - 32px));max-height:calc(100% - 32px)}
-dialog::backdrop{background:rgba(10,14,11,.5)}
+/* sheets (dialog) */
+dialog{border:0;border-radius:20px;background:var(--glass-strong);-webkit-backdrop-filter:saturate(180%) blur(30px);backdrop-filter:saturate(180%) blur(30px);
+  color:var(--label);padding:0;width:min(520px,calc(100% - 32px));max-height:calc(100% - 32px);box-shadow:0 30px 90px -20px rgba(0,0,0,.5)}
+dialog::backdrop{background:rgba(0,0,0,.32)}
 .dlg{display:flex;flex-direction:column;max-height:calc(100vh - 40px)}
-.dlg header{padding:18px 20px 10px;border-bottom:1px solid var(--line)}
-.dlg header h3{font-family:var(--f-display);font-weight:400;font-size:22px;margin:0}
-.dlg header p{margin:4px 0 0;color:var(--muted);font-size:13.5px}
-.form{padding:16px 20px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:12px 14px}
-.form .full{grid-column:1/-1}
-.form label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);min-width:0}
-.form input,.form textarea{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;color:var(--ink);font-size:14px;min-width:0}
-.form input[type=file]{padding:6px}
-.form textarea{min-height:70px;resize:vertical}
-.dlg footer{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--line)}
-@media (max-width:520px){.form{grid-template-columns:1fr}}
-.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:13.5px;z-index:30}
-@media (prefers-reduced-motion:reduce){.pin i{animation:none}.scrim{transition:none}}
+.dlg header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:14px 16px;border-bottom:.5px solid var(--hair)}
+.dlg header h3{grid-column:2;font-size:17px;font-weight:600;margin:0;letter-spacing:-.02em;white-space:nowrap}
+.dlg header .navl{justify-self:start}
+.dlg header .navr{justify-self:end}
+.navbtn{border:0;background:none;color:var(--tint);font-size:17px;padding:6px 4px;cursor:pointer;letter-spacing:-.02em}
+.navbtn.strong{font-weight:600}
+.form{padding:20px 16px 8px;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.group{background:var(--fill);border-radius:12px;overflow:hidden}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;min-height:44px}
+.row+.row{border-top:.5px solid var(--hair)}
+.row .rl{display:flex;flex-direction:column;min-width:0}
+.row .rl b{font-weight:400;font-size:17px;letter-spacing:-.02em}
+.row .rl small{font-size:13px;color:var(--label2)}
+.row .rv{font-size:15px;color:var(--label2);max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick{position:relative;color:var(--tint);font-size:17px;cursor:pointer;white-space:nowrap}
+.pick input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.footnote{font-size:13px;color:var(--label2);padding:6px 16px 16px;margin:0}
+.toast{position:fixed;z-index:30;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+  font-size:15px;font-weight:500;padding:12px 20px;border-radius:999px;max-width:calc(100% - 32px);text-align:center}
+.units{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+@media (max-width:640px){
+  .titlebar h1{font-size:28px}
+  .titlebar p{font-size:14px}
+  .tb .lbl{display:none}
+  .tb.primary .lbl{display:inline}
+  .tourcard{left:8px;right:8px;width:auto;bottom:calc(8px + env(safe-area-inset-bottom,0px));border-radius:28px}
+}
+@media (prefers-reduced-motion:reduce){.pin i,.status::before{animation:none}.scrim,.photo,.toolbar,.titlebar{transition:none}}
 </style>
 
 <div class="app">
-  <header class="bar">
-    <div class="brand">
-      <small>Heritage documentation · Test record</small>
-      <h1>An Ode to the Dead</h1>
-    </div>
-    <div class="actions">
-      <label class="btn primary" for="modelFile" title="Load a .glb, .gltf or .obj model">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
-        <span class="lbl">Load 3D model</span>
-      </label>
-      <input id="modelFile" type="file" accept=".glb,.gltf,.obj,.mtl,.bin,.jpg,.jpeg,.png,.webp" multiple hidden>
-      <button class="btn" id="upBtn" type="button" title="Turn the model upright (for scans exported Z-up)" hidden>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>
-        <span class="lbl">Turn upright</span>
-      </button>
-      <button class="btn" id="editBtn" type="button" title="Replace the drawing or add a photo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/></svg>
-        <span class="lbl">Replace files</span>
-      </button>
-      <button class="btn" id="tourBtn" type="button" title="Play the guided tour">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l5.5-3.5Z" fill="currentColor"/></svg>
-        <span class="lbl" id="tourLbl">Guided tour</span>
-      </button>
-      <button class="btn" id="resetBtn" type="button" title="Reset view">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
-        <span class="lbl">Reset view</span>
-      </button>
-    </div>
-  </header>
-
   <main class="stage" id="stage">
     <!-- the sheet waits behind the grave -->
     <article class="sheet" id="sheet" hidden aria-label="Measured drawing">
       <img id="rDrawing" alt="Measured drawing of the grave" draggable="false">
     </article>
 
-    <canvas id="view" aria-label="3D model of the grave. Drag to orbit, scroll to zoom, click the grave to reveal its drawing."></canvas>
+    <canvas id="view" aria-label="3D scan of the grave. Drag to look around, pinch or scroll to zoom, tap the grave to see its drawing."></canvas>
     <div class="scrim" id="scrim"></div>
     <div class="photo" id="photoLayer" hidden><img id="photoImg" alt="" draggable="false"></div>
     <div id="dots"></div>
+
+    <header class="titlebar">
+      <h1>An Ode to the Dead</h1>
+      <p>Grave 2, Zone G · Imambargah, Hassanabad</p>
+    </header>
+
+    <button class="pin" id="pin" type="button" aria-label="Show the measured drawing">
+      <span class="callout glass"><b id="pinLabel">Grave 2</b><small>Tap the grave</small></span><i></i>
+    </button>
+
     <div class="openbar" id="openbar" hidden>
-      <button type="button" id="backBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18 9 12l6-6"/></svg>Back to model</button>
-      <span class="obmid" id="obMid" hidden></span>
-      <span></span>
+      <button type="button" id="backBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19 8 12l7-7"/></svg>Back</button>
+      <span class="obmid glass" id="obMid" hidden></span>
+      <span style="width:80px"></span>
     </div>
-    <button class="pin" id="pin" type="button" aria-label="Reveal grave drawing"><span id="pinLabel">HSB-G01 · tap the grave</span><i></i></button>
-    <div class="status" id="status" hidden></div>
     <div class="openbar" id="alignbar" hidden>
       <button type="button" id="alignCancel">Cancel</button>
-      <span class="obmid">Orbit and zoom until the scan lines up with the photo</span>
-      <button type="button" id="alignPin" style="background:var(--accent);color:var(--accent-ink);border-color:var(--accent)">Pin photo here</button>
+      <span class="obmid glass">Move the scan until it lines up with the photo</span>
+      <button type="button" class="fill" id="alignPin">Pin Photo</button>
     </div>
-    <div class="hintbar" id="hint" hidden>Click the sheet to open it · click the grave to put it away</div>
-    <section class="tourcard" id="tourcard" hidden aria-live="polite" aria-label="Guided tour">
-      <div class="tc-top"><span id="tcStep">Stop 1 of 5</span><span class="tc-time" id="tcTime"></span></div>
+
+    <div class="capsule glass status" id="status" hidden></div>
+    <div class="capsule glass hintbar" id="hint" hidden>Tap the drawing to open it · Tap the grave to put it away</div>
+
+    <nav class="toolbar glass" aria-label="Viewer controls">
+      <label class="tb icon" for="modelFile" title="Open a 3D model" aria-label="Open a 3D model">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2.8 3.8 7.4v9.2l8.2 4.6 8.2-4.6V7.4Z"/><path d="M3.8 7.4 12 12l8.2-4.6M12 12v9.2"/></svg>
+      </label>
+      <input id="modelFile" type="file" accept=".glb,.gltf,.obj,.mtl,.bin,.jpg,.jpeg,.png,.webp" multiple hidden>
+      <button class="tb icon" id="editBtn" type="button" title="Add a photo or replace the drawing" aria-label="Add a photo or replace the drawing">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+      </button>
+      <span class="tsep"></span>
+      <button class="tb primary" id="tourBtn" type="button" title="Play the guided tour">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.6-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg>
+        <span class="lbl" id="tourLbl">Guided Tour</span>
+      </button>
+      <span class="tsep"></span>
+      <button class="tb icon" id="resetBtn" type="button" title="Reset view" aria-label="Reset view">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5v4.5h4.5"/></svg>
+      </button>
+      <button class="tb icon" id="upBtn" type="button" title="Turn the model upright" aria-label="Turn the model upright" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5M6 11l6-6 6 6"/></svg>
+      </button>
+    </nav>
+
+    <section class="tourcard glass" id="tourcard" hidden aria-live="polite" aria-label="Guided tour">
       <div class="tc-segs" id="tcSegs"></div>
+      <div class="tc-top"><span id="tcStep">Stop 1 of 6</span><span class="tc-time" id="tcTime"></span></div>
       <h3 id="tcTitle"></h3>
       <p id="tcText"></p>
       <div class="tc-ctl">
-        <button type="button" id="tcPrev" aria-label="Previous stop"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zM20 5v14L9 12Z"/></svg></button>
-        <button type="button" id="tcPlay" aria-label="Pause"><svg id="tcPlayIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg></button>
-        <button type="button" id="tcNext" aria-label="Next stop"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 5h2v14h-2zM4 5v14l11-7Z"/></svg></button>
-        <button type="button" class="exit" id="tcExit">Exit tour</button>
+        <button type="button" id="tcPrev" aria-label="Previous stop"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2.2v14H6zM19 6.2v11.6a.8.8 0 0 1-1.2.7L9.6 12.7a.8.8 0 0 1 0-1.4l8.2-5.8a.8.8 0 0 1 1.2.7Z"/></svg></button>
+        <button type="button" id="tcPlay" aria-label="Pause"><svg id="tcPlayIcon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg></button>
+        <button type="button" id="tcNext" aria-label="Next stop"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M15.8 5H18v14h-2.2zM5 6.2v11.6a.8.8 0 0 0 1.2.7l8.2-5.8a.8.8 0 0 0 0-1.4L6.2 5.5a.8.8 0 0 0-1.2.7Z"/></svg></button>
+        <button type="button" class="exit" id="tcExit">Done</button>
       </div>
     </section>
-    <div class="north" aria-hidden="true">
-      <svg viewBox="0 0 44 44" width="44" height="44"><circle cx="22" cy="22" r="20" fill="var(--surface)" stroke="var(--line)"/>
-        <path d="M22 7 28 30 22 26 16 30Z" fill="var(--ink)"/><text x="22" y="40" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="8" fill="var(--muted)">N</text></svg>
-    </div>
-    <div class="hud"><span>Drag · orbit</span><span>Scroll / pinch · zoom</span><span>Right-drag · pan</span><span id="units">Units: metres</span></div>
+    <span class="units" id="units"></span>
   </main>
 </div>
 
 <dialog id="dlg">
   <form class="dlg" id="editForm" method="dialog">
     <header>
-      <h3>Replace the drawing or add a photo</h3>
-      <p>Files you add stay in this browser tab only. Send them to Claude to publish them with the page.</p>
+      <button class="navbtn navl" type="button" id="cancelEdit">Cancel</button>
+      <h3>Add to This Grave</h3>
+      <button class="navbtn strong navr" type="submit">Done</button>
     </header>
     <div class="form">
-      <label class="full">Drawing sheet (PNG or JPG)<input id="fDrawing" type="file" accept="image/*"></label>
-      <label class="full">Add a photograph of this grave (JPG or PNG). You line it up with the scan, then pin it.<input id="fPhoto" type="file" accept="image/*"></label>
+      <div class="group">
+        <div class="row">
+          <span class="rl"><b>Photograph</b><small>Line it up with the scan, then pin it</small></span>
+          <label class="pick">Choose…<input id="fPhoto" type="file" accept="image/*"></label>
+        </div>
+        <div class="row">
+          <span class="rl"><b>Drawing Sheet</b><small>Replaces the current sheet</small></span>
+          <label class="pick">Choose…<input id="fDrawing" type="file" accept="image/*"></label>
+        </div>
+      </div>
+      <p class="footnote">Files you add stay on this device. Send them to Claude to publish them with the site.</p>
     </div>
-    <footer>
-      <button class="btn" type="button" id="cancelEdit">Cancel</button>
-      <button class="btn primary" type="submit">Apply</button>
-    </footer>
   </form>
 </dialog>
-<div class="toast" id="toast" hidden></div>
+<div class="toast glass" id="toast" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -367,6 +422,7 @@ function placePin(){
 pin.addEventListener('click',reveal);
 /* render loop: started at the end of the script, once everything it calls has been declared */
 function loop(now){ requestAnimationFrame(loop); now=now||performance.now(); stepTour(now); stepPose(now); if(!camLock) controls.update(); renderer.render(scene,camera); placePin(); placeDots();
+  document.body.classList.toggle('recordopen', state==='open'||state==='photo'||state==='align');
   if(state==='peek') sheet.style.transform=computePath()[1];   // sheet stays tucked behind the grave while you orbit
 }
 
@@ -375,7 +431,7 @@ const sheet=$('sheet'), scrim=$('scrim'); let path=null;
 /* the drawing is sized to its own proportions, as large as the stage allows */
 function sizeSheet(){
   const img=$('rDrawing'), ar=(img.naturalWidth&&img.naturalHeight)?img.naturalWidth/img.naturalHeight:1.414;
-  const top=62, pad=16, W=stage.clientWidth-pad*2, H=stage.clientHeight-top-pad;
+  const top=68, pad=16, W=stage.clientWidth-pad*2, H=stage.clientHeight-top-pad;
   let w=W, h=w/ar; if(h>H){ h=H; w=h*ar; }
   sheet.style.width=w+'px'; sheet.style.height=h+'px';
   sheet.style.left=(stage.clientWidth-w)/2+'px'; sheet.style.top=(top+(H-h)/2)+'px';
@@ -500,14 +556,16 @@ $('resetBtn').addEventListener('click',()=>{ if(state==='closed') fitView(); });
 function dms(x,p,n){const a=Math.abs(x),d=Math.floor(a),mf=(a-d)*60,m=Math.floor(mf),s=((mf-m)*60).toFixed(1);return `${d}° ${String(m).padStart(2,'0')}′ ${s.padStart(4,'0')}″ ${x>=0?p:n}`;}
 function txt(el,val){ el.textContent=val||'Not recorded'; el.classList.toggle('empty',!val); }
 function render(){
-  $('pinLabel').textContent=record.id+' · tap the grave';
+  $('pinLabel').textContent=record.title;
   $('rDrawing').src=record.drawing;
 }
 $('rDrawing').addEventListener('load',()=>{ if(state==='open') sizeSheet(); });
 new ResizeObserver(()=>{ if(state==='open') sizeSheet(); }).observe(stage);
 
-function openEdit(){ $('fDrawing').value=''; $('fPhoto').value=''; $('dlg').showModal(); }
+function openEdit(){ $('fDrawing').value=''; $('fPhoto').value=''; resetPicks(); $('dlg').showModal(); }
 $('editBtn').addEventListener('click',openEdit);
+function resetPicks(){ ['fPhoto','fDrawing'].forEach(id=>{ $(id).parentElement.firstChild.nodeValue='Choose…'; }); }
+['fPhoto','fDrawing'].forEach(id=>$(id).addEventListener('change',e=>{ const f=e.target.files[0]; e.target.parentElement.firstChild.nodeValue=f?f.name:'Choose…'; }));
 $('cancelEdit').addEventListener('click',()=>$('dlg').close());
 $('editForm').addEventListener('submit',e=>{
   e.preventDefault();
@@ -542,7 +600,7 @@ const TOUR_GENERIC=[
   {title:'The headstone', secs:7, target:[.5,.72,.06], dir:[.35,.22,-1], k:.85,
    text:'The headstone marks the head of the grave. In the full record, its inscription appears here with a transcription and translation.'},
   {title:'The burial axis', secs:7, target:[.5,.3,.5], dir:[0,1,.02], k:1.5,
-   text:'Seen from above, the grave runs north to south. The body is laid on its right side, facing the qibla to the west.'},
+   text:'Seen from above, the plan of the grave and its setting can be read against the measured drawing.'},
   {title:'The footstone', secs:6, target:[.5,.4,.95], dir:[.4,.3,1], k:.8,
    text:'A smaller stone marks the foot. Condition notes for each stone, such as cracks, losses and lichen, will be mapped on the model.'},
   {title:'The measured record', secs:9, target:[.5,.35,.5], dir:[1.1,.75,1.25], k:2.1, sheet:true,
@@ -615,7 +673,7 @@ async function startTour(){
   TOUR=model.userData.isScan?TOUR_SCAN:TOUR_GENERIC;
   tour.on=true; tour.paused=false; tour.ended=false; document.body.classList.add('touring');
   $('tcSegs').innerHTML=TOUR.map(()=>'<span><i></i></span>').join('');
-  $('tourcard').hidden=false; $('tourLbl').textContent='Exit tour'; highlight(false);
+  $('tourcard').hidden=false;  highlight(false);
   goStop(0);
 }
 function endTour(){
@@ -624,7 +682,7 @@ function endTour(){
 async function exitTour(){
   if(!tour.on) return;
   tour.on=false; tour.token++; tour.dwell=false; fly=null;
-  $('tourcard').hidden=true; $('tourLbl').textContent='Guided tour'; document.body.classList.remove('touring');
+  $('tourcard').hidden=true;  document.body.classList.remove('touring');
   await idle();
   if(state==='photo') await closePhoto();
   if(state==='open') await shrink();
@@ -702,7 +760,7 @@ async function openPhoto(i){
   if(state!=='closed'||!scanObj()) return;
   const p=PHOTOS[i]; state='busy'; highlight(false); camLock=true; controls.enabled=false;
   savedView={pos:camera.position.clone(), q:camera.quaternion.clone(), fov:camera.fov, target:controls.target.clone()};
-  photoImg.src=p.src; photoImg.alt=p.title; $('obMid').textContent=p.title+' · hold to compare with the scan';
+  photoImg.src=p.src; photoImg.alt=p.title; $('obMid').textContent=p.title+' · Press and hold to compare';
   await poseFly(photoPose(p), reduced?0:1900);
   photoLayer.hidden=false; photoLayer.classList.remove('peekscan'); void photoLayer.offsetWidth; photoLayer.classList.add('on');
   await wait(reduced?0:800);
