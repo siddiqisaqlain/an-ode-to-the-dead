@@ -9,7 +9,7 @@ The site follows the project's folder structure: **site → zone → grave**.
 2. `site.html?site=…&zone=…`: zone tabs. Each zone shows a 3D map built from its zone plan, with its graves numbered in plan order and a list beside the map.
 3. `grave.html?site=…&zone=…&grave=…`: one grave. It shows the 3D scan if there is one, or a default model sized from the zone plan. It has the measured sheet, photographs placed where they were taken, a guided tour, and a **Files** drawer with the grave's five folders: CAD drawing, PDFs (final + revisions), photos, sketches, photographer's photos.
 
-**Test record:** Grave 2, Zone G, Imambargah, Hassanabad. Measured drawing: Sheet 61 (1:10). Zone G's map is traced from the zone map on that sheet, so its scale is approximate.
+**Test record:** Grave 2, Zone G, Imambargah, Hassanabad. Measured drawing: Sheet 61 (1:10). Each zone's 3D map is traced from its zone map in `zone-maps/`. The maps carry no scale, so sizes are approximate.
 
 ## Adding to the archive
 All content is listed in `assets/archive.js`. To add a grave, put its files under

@@ -14,7 +14,9 @@ window.GraveModels = (function(){
   }
 
   function build(g){
-    const p = g.plan || { w: .45, d: 1.1 }, grp = new THREE.Group();
+    let p = g.plan || { w: .45, d: 1.1 }, grp = new THREE.Group(), turned = false;
+    // a grave lying east–west is built north–south and turned, so its upright stays at one end
+    if (g.kind !== 'headstone' && p.w > p.d * 1.3) { p = { w: p.d, d: p.w }; turned = true; }
     if (g.kind === 'headstone') { grp.add(arch(p.w, g.height || .7, p.d)); }
     else {
       // a low plinth over the footprint with an upright at its north end
@@ -24,6 +26,7 @@ window.GraveModels = (function(){
       up.position.set(0, plinthH, -p.d / 2 + t / 2 + .02); grp.add(up);
     }
     grp.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
+    if (turned) { const outer = new THREE.Group(); grp.rotation.y = Math.PI / 2; outer.add(grp); return outer; }
     return grp;
   }
 
