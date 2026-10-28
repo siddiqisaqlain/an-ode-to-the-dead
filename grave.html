@@ -170,13 +170,20 @@ dialog::backdrop{background:rgba(0,0,0,.32)}
 .titlebar .segnav{margin-bottom:14px}
 
 /* arrival: the stage blooms open (continuing the dive from the zone map) and the chrome settles in after the camera */
-.arrive{position:absolute;inset:0;z-index:20;pointer-events:none;background:var(--bg);animation:arrive .9s var(--ease) .1s forwards}
-@keyframes arrive{to{opacity:0;visibility:hidden}}
+/* the zone map closed onto the grave from the centre of the screen; the stage opens from the centre, once the grave is ready */
+@property --iris{syntax:'<percentage>';inherits:false;initial-value:0%}
+.arrive{position:absolute;inset:0;z-index:20;pointer-events:none;background:var(--bg);
+  -webkit-mask-image:radial-gradient(circle at 50% 50%,transparent var(--iris),#000 calc(var(--iris) + 22%));
+  mask-image:radial-gradient(circle at 50% 50%,transparent var(--iris),#000 calc(var(--iris) + 22%))}
+body.shown .arrive{animation:iris .85s cubic-bezier(.15,.6,.3,1) forwards}
+@keyframes iris{60%{opacity:1}to{--iris:130%;opacity:0;visibility:hidden}}
+.app .status{z-index:21}
 @keyframes titleIn{from{opacity:0;transform:translateY(-12px)}}
 @keyframes toolIn{from{opacity:0;transform:translateX(-50%) translateY(18px)}}
-.titlebar{animation:titleIn .8s var(--ease) .8s backwards}
-.toolbar{animation:toolIn .8s var(--ease) 1s backwards}
-@media (prefers-reduced-motion:reduce){.arrive{display:none}.titlebar,.toolbar{animation:none}}
+body:not(.shown) .titlebar,body:not(.shown) .toolbar{visibility:hidden}
+body.shown .titlebar{animation:titleIn .8s var(--ease) .8s backwards}
+body.shown .toolbar{animation:toolIn .8s var(--ease) 1s backwards}
+@media (prefers-reduced-motion:reduce){.arrive{display:none}body.shown .titlebar,body.shown .toolbar{animation:none}}
 .tb[aria-disabled="true"]{opacity:.3;pointer-events:none}
 a.tb{text-decoration:none}
 
@@ -412,16 +419,21 @@ function fitView(){
 }
 /* arrival: the camera comes down onto the grave from high above, carrying on the dive from the zone map */
 let intro=null, introDone=false;
-const dove=(()=>{ try{ const t=+sessionStorage.getItem('ode:dive'); sessionStorage.removeItem('ode:dive'); return Date.now()-t<8000; }catch(e){ return false; } })();
+// the dive from the zone map, if we just came from it: its camera angle and the way it was turning (see DIVE in site.html)
+const dove=(()=>{ try{ const d=JSON.parse(sessionStorage.getItem('ode:dive')||'null'); sessionStorage.removeItem('ode:dive'); return d&&Date.now()-d.t<8000?d:null; }catch(e){ return null; } })();
+const show=()=>document.body.classList.add('shown');
+setTimeout(show,9000);   // never leave the stage covered, even if the scan stalls
 function playIntro(){
-  if(introDone) return; introDone=true; if(reduced) return;
+  if(introDone) return; introDone=true; show(); if(reduced) return;
   const end=new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
-  intro={end,start:{radius:end.radius*(dove?3:1.9),phi:dove?.06:end.phi*.55,theta:end.theta-(dove?1.3:.6)},t0:performance.now(),dur:dove?2200:1500};
+  // same tilt the map ended on, further out, still turning clockwise (theta falls), slowing to rest on the grave
+  intro={end,start:dove?{radius:end.radius*2.7,phi:THREE.MathUtils.degToRad(dove.pitch),theta:end.theta+THREE.MathUtils.degToRad(dove.turn)*.9}
+                       :{radius:end.radius*1.8,phi:end.phi*.8,theta:end.theta+.5},t0:performance.now(),dur:dove?1700:1400};
   controls.enabled=false; stepIntro(intro.t0);
 }
 function stepIntro(now){
   if(!intro) return;
-  const k=Math.min(1,(now-intro.t0)/intro.dur), r=1-Math.pow(1-k,4), a=1-Math.pow(1-k,3), s=intro.start, e=intro.end;
+  const k=Math.min(1,(now-intro.t0)/intro.dur), r=1-Math.pow(1-k,3), a=r, s=intro.start, e=intro.end;   // starts at speed, as the dive left off
   camera.position.setFromSpherical(new THREE.Spherical(s.radius+(e.radius-s.radius)*r,s.phi+(e.phi-s.phi)*a,s.theta+(e.theta-s.theta)*a)).add(controls.target);
   camera.lookAt(controls.target);
   if(k>=1){ intro=null; controls.enabled=true; }

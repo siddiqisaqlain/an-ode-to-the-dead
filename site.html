@@ -132,8 +132,8 @@ body.leaving .tabs{opacity:0;transform:translate(-50%,20px)}
 body.leaving .rise,body.leaving .north,body.leaving .maplibregl-ctrl-bottom-left{opacity:0;transition:opacity .4s var(--ease)}
 body.leaving .gn:not(.picked){opacity:0;transition:opacity .3s}
 .bloom{position:fixed;inset:0;z-index:9;pointer-events:none;opacity:0;transform:scale(.15);
-  background:radial-gradient(circle at 50% 55%,var(--bg) 0 32%,color-mix(in srgb,var(--bg) 0%,transparent) 64%)}
-body.bloom-on .bloom{opacity:1;transform:scale(3.2);transition:opacity .35s var(--ease),transform .65s cubic-bezier(.6,0,.4,1)}
+  background:radial-gradient(circle at 50% 50%,var(--bg) 0 32%,color-mix(in srgb,var(--bg) 0%,transparent) 64%)}
+body.bloom-on .bloom{opacity:1;transform:scale(3.2);transition:opacity .3s ease-in,transform .5s cubic-bezier(.5,0,.75,0)}
 @media (max-width:760px){ body.leaving .panel{transform:translateY(40px);opacity:0;transition:opacity .4s,transform .4s} }
 @media (prefers-reduced-motion:reduce){ .veil,.rise,.zt > *,.panel,.tabs,.gn{transition:none!important} }
 </style>
@@ -290,8 +290,9 @@ function frame(bounds, opts){
   const cam = map.cameraForBounds(bounds, { padding: padding(), bearing: opts.bearing }) || {};
   return { center: cam.center || bounds.getCenter(), zoom: Math.min(opts.max || 21, (cam.zoom || 18) - (opts.less || 0)), bearing: opts.bearing, pitch: opts.pitch };
 }
-let current = null, bearing = -22;
+let current = null, bearing = -22, pending = null;
 function focusZone(id){
+  if (!document.body.classList.contains('landed')) { pending = id; return; }   // still flying in: go there once landed
   const l = L.find(x => x.zone.id === id) || null; current = l;
   document.querySelectorAll('#tabs button').forEach(b => {
     const on = b.dataset.z === (l ? l.zone.id : ''); b.setAttribute('aria-pressed', String(on));
@@ -318,20 +319,24 @@ function prefetch(l){
   urls.forEach(u => { if (fetched.has(u)) return; fetched.add(u);
     const k = document.createElement('link'); k.rel = 'prefetch'; k.href = u; document.head.appendChild(k); });
 }
-const closeUp = (at, b) => ({ center: at, zoom: 22.3, pitch: 72, bearing: b });
-const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const closeUp = (at, b) => ({ center: at, zoom: 22.3, pitch: 72, bearing: b });   // pitch matches DIVE.pitch
+/* the dive and the grave page's arrival are one move: the map camera speeds up as it drops and turns clockwise,
+   the screen closes from the centre while it's still moving, and the grave page opens from the centre at the same
+   angle, still turning the same way, and slows to a stop on the grave. DIVE is shared with grave.html via sessionStorage. */
+const DIVE = { pitch: 72, turn: 40, ms: 1300, close: 820 };
+const accel = t => t * t * (1.6 - .6 * t);   // gathers speed and is still moving at the cut
 let leaving = false;
 function openGrave(z, n){
   const g = Archive.grave(z, n); if (!g || leaving) return;
   const url = Archive.graveURL(site, z, g), l = L.find(x => x.zone === z), m = l && l.graves.find(x => x.n === n);
   if (reduced || !m) { location.href = url; return; }
   leaving = true; current = l; hotGrave(n);
-  try { sessionStorage.setItem('ode:dive', String(Date.now())); } catch (e) {}
+  try { sessionStorage.setItem('ode:dive', JSON.stringify({ t: Date.now(), pitch: DIVE.pitch, turn: DIVE.turn })); } catch (e) {}
   document.body.classList.add('leaving');
   nums.forEach(k => k.getElement().classList.toggle('picked', +k.getElement().dataset.n === n));
-  map.flyTo({ ...closeUp(m.at, map.getBearing() + 40), duration: 1500, curve: 1.6, easing: ease, essential: true });
-  setTimeout(() => document.body.classList.add('bloom-on'), 1000);
-  setTimeout(() => { location.href = url; }, 1550);
+  map.easeTo({ ...closeUp(m.at, map.getBearing() + DIVE.turn), duration: DIVE.ms, easing: accel, essential: true });
+  setTimeout(() => document.body.classList.add('bloom-on'), DIVE.close);
+  setTimeout(() => { location.href = url; }, DIVE.ms + 20);
 }
 // back from the grave page (bfcache): undo the dive
 addEventListener('pageshow', e => { if (e.persisted && leaving) { leaving = false; document.body.classList.remove('leaving', 'bloom-on'); if (current) focusZone(current.zone.id); } });
@@ -390,7 +395,10 @@ map.on('load', () => {
     map.jumpTo(closeUp(back.at, bearing + 40)); document.body.classList.add('landed'); focusZone(start.id); return;
   }
   map.flyTo({ ...frame(all, { bearing, pitch: 55, max: 20, less: .1 }), duration: reduced ? 0 : 1600, curve: 1.2, essential: true });
-  map.once('moveend', () => { document.body.classList.add('landed'); if (start) setTimeout(() => focusZone(start.id), reduced ? 0 : 250); });
+  map.once('moveend', () => {
+    document.body.classList.add('landed'); const go = pending !== null ? pending : start && start.id;
+    if (go) setTimeout(() => focusZone(go), reduced ? 0 : 250);
+  });
 });
 })();
 </script>
