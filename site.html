@@ -177,7 +177,7 @@ body.bloom-on .bloom{opacity:1;transform:scale(3.2);transition:opacity .3s ease-
 </aside>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="assets/archive.js?v=14"></script>
+<script src="assets/archive.js?v=15"></script>
 <script src="assets/map.js?v=7"></script>
 <script src="assets/nav.js?v=5"></script>
 <script>
@@ -255,7 +255,9 @@ function zoneFacts(z){
 }
 function legend(){
   const k = CTX_COLORS;
-  return `<span class="legend">${[['Building', k.building], ['Landmark', k.landmark], ['Trees', k.trees], ['Grass', k.grass], ['Bare earth', k.earth], ['Water', c.water]]
+  return `<span class="legend">${[['Building', k.building], ['Landmark', k.landmark], ['Imambargah roof', k.roof.B03], ['Masjid roof', k.roof.B01],
+    ['Trees', k.trees], ['Grass', k.grass], ['Bare earth', k.earth], ['Open ground', k.ground], ['Water', c.water],
+    ['Paved path', k.path], ['Earth path', k.earthPath]]
     .map(([n, col]) => `<span><i style="background:${col}"></i>${n}</span>`).join('')}</span>`;
 }
 function bindList(){
@@ -273,8 +275,14 @@ $('tabs').addEventListener('click', e => { const b = e.target.closest('button');
 /* ---------- the map ---------- */
 const c = MapKit.palette();
 const CTX_COLORS = c.dark
-  ? { trees: '#24352a', grass: '#2c3a29', earth: '#2d2a25', building: c.bld, landmark: '#9c978b', wall: '#bdb8ac', path: '#3a3b40', trunk: '#6b5f50', crown: '#4f6b52', platform: '#36353a' }
-  : { trees: '#c9d3bb', grass: '#dbe3c8', earth: '#e3dccd', building: c.bld, landmark: c.stone, wall: '#a8a397', path: '#ffffff', trunk: '#8a7b68', crown: '#93ab86', platform: '#e6e2d8' };
+  ? { trees: '#24352a', grass: '#2c3a29', earth: '#2d2a25', building: c.bld, landmark: '#9c978b', wall: '#bdb8ac', path: '#3a3b40', trunk: '#6b5f50', crown: '#4f6b52', platform: '#36353a',
+      earthPath: '#3b352c', road: '#3e4046', casing: '#232427', ground: '#2a2924',
+      roof: { B01: '#a9a397', B02: '#4d4c49', B03: '#66727e', B04: '#5f7a5c' } }
+  : { trees: '#c9d3bb', grass: '#dbe3c8', earth: '#e3dccd', building: c.bld, landmark: c.stone, wall: '#a8a397', path: '#ffffff', trunk: '#8a7b68', crown: '#93ab86', platform: '#e6e2d8',
+      earthPath: '#d6c9ae', road: '#fbfaf7', casing: '#cfcabd', ground: '#e8e3d0',
+      roof: { B01: '#e6dfcf', B02: '#7a7975', B03: '#93a1ae', B04: '#93ad8f' } };
+/* line width in metres on the ground: pixels per metre at this latitude double with each zoom level */
+const metres = w => ['interpolate', ['exponential', 2], ['zoom'], 14, ['*', w, .126], 16, ['*', w, .506], 22, ['*', w, 32.36], 23, ['*', w, 64.7]];
 const all = new maplibregl.LngLatBounds(); L.forEach(l => { all.extend(l.bounds[0]); all.extend(l.bounds[1]); });
 let map;
 try {
@@ -296,21 +304,42 @@ function addContext(){
     fill('ctx-earth', 'earth', k.earth, .9);
     fill('ctx-grass', 'grass', k.grass, .9);
     fill('ctx-trees', 'trees', k.trees, .85);
+    fill('ctx-ground', 'ground', k.ground, .8);
     fill('ctx-water', 'water', c.water, 1);
     fill('ctx-platform', 'platform', k.platform, 1);   // flat paving: an extrusion this thin shows the terrain's slope as a wedge
-    map.addLayer({ id: 'ctx-paths', type: 'line', source: 'ctx', filter: is('path'), layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: { 'line-color': k.path, 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 16, 1, 20, 10, 22, 40], 'line-opacity': .9 } }, before);
+    map.addLayer({ id: 'ctx-ground-edge', type: 'line', source: 'ctx', filter: is('ground'),
+      paint: { 'line-color': c.label, 'line-width': 1, 'line-dasharray': [2, 2], 'line-opacity': .6 } }, before);
+    map.addLayer({ id: 'ctx-water-edge', type: 'line', source: 'ctx', filter: is('water'), layout: { 'line-join': 'round' },
+      paint: { 'line-color': c.waterLine, 'line-width': ['interpolate', ['linear'], ['zoom'], 16, .8, 20, 2] } }, before);
+    /* streets and paths at their surveyed width; a darker casing keeps the edges readable on bare ground */
+    const lines = (id, kinds, color, extra) => map.addLayer({ id, type: 'line', source: 'ctx', filter: kinds,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': color, 'line-width': metres(extra ? ['+', ['get', 'w'], extra] : ['get', 'w']) } }, before);
+    lines('ctx-road-case', is('road'), k.casing, .8);
+    lines('ctx-road', is('road'), k.road);
+    lines('ctx-path-case', is('path'), k.casing, .5);
+    lines('ctx-path', is('path'), ['match', ['get', 'surface'], 'earth', k.earthPath, k.path]);
     map.addLayer({ id: 'ctx-precinct', type: 'line', source: 'ctx', filter: is('precinct'),
       paint: { 'line-color': c.label, 'line-width': 1.2, 'line-dasharray': [4, 3], 'line-opacity': .8 } }, before);
-    map.addLayer({ id: 'ctx-3d', type: 'fill-extrusion', source: 'ctx', minzoom: 14, filter: is('building', 'landmark', 'wall'),
-      paint: { 'fill-extrusion-color': ['match', ['get', 'id'], 'B07', k.building, ['match', ['get', 'kind'], 'landmark', k.landmark, 'wall', k.wall, k.building]],
+    /* buildings to their eaves; the main buildings carry their roofs as stacked, stepped-in slabs in the roof's colour */
+    const roofColor = ['match', ['get', 'mat'], ...Object.entries(k.roof).flat(), k.landmark];
+    map.addLayer({ id: 'ctx-3d', type: 'fill-extrusion', source: 'ctx', minzoom: 14, filter: is('building', 'landmark', 'wall', 'roof'),
+      paint: { 'fill-extrusion-color': ['match', ['get', 'kind'], 'roof', roofColor,
+                 ['match', ['get', 'id'], 'B07', k.building, ['match', ['get', 'kind'], 'landmark', k.landmark, 'wall', k.wall, k.building]]],
                'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 15.5, ['get', 'h']],
-               'fill-extrusion-base': ['coalesce', ['get', 'base'], 0],
-               'fill-extrusion-opacity': .9, 'fill-extrusion-vertical-gradient': true } }, 'graves-3d');
-    map.addLayer({ id: 'ctx-names', type: 'symbol', source: 'ctx', minzoom: 16.5,
-      filter: ['all', is('landmark'), ['in', ['get', 'id'], ['literal', ['B01', 'B03', 'B07']]]],
-      layout: { 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-letter-spacing': .08, 'text-max-width': 9 },
-      paint: { 'text-color': c.label, 'text-halo-color': c.halo, 'text-halo-width': 1.4 } });
+               'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 14, 0, 15.5, ['coalesce', ['get', 'base'], 0]],
+               'fill-extrusion-opacity': .92, 'fill-extrusion-vertical-gradient': true } }, 'graves-3d');
+    const text = (size, extra) => Object.assign({ 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Regular'], 'text-size': size,
+      'text-letter-spacing': .08, 'text-max-width': 9 }, extra);
+    const ink = { 'text-color': c.label, 'text-halo-color': c.halo, 'text-halo-width': 1.4 };
+    map.addLayer({ id: 'ctx-names', type: 'symbol', source: 'ctx', minzoom: 16.5, filter: ['all', is('landmark', 'ground'), ['has', 'label']],
+      layout: text(['match', ['get', 'id'], ['B01', 'B03'], 12, 10.5]), paint: ink });
+    map.addLayer({ id: 'ctx-water-name', type: 'symbol', source: 'ctx', minzoom: 16, filter: ['all', is('water'), ['has', 'label']],
+      layout: text(11, { 'text-font': ['Noto Sans Italic'], 'text-letter-spacing': .2 }),
+      paint: Object.assign({}, ink, { 'text-color': c.waterLine }) });
+    map.addLayer({ id: 'ctx-street-names', type: 'symbol', source: 'ctx', minzoom: 16, filter: ['all', is('road', 'path'), ['has', 'label']],
+      layout: text(['match', ['get', 'kind'], 'road', 10.5, 9.5], { 'symbol-placement': 'line', 'text-max-angle': 30, 'symbol-spacing': 480 }),
+      paint: ink });
   }).catch(() => {});
 }
 /* a zone's fits: redraw a survey building as a rectangle squared to the zone plan, its corner on the zone's boundary,
