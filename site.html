@@ -33,7 +33,7 @@ body.ready .veil{opacity:0}
 .frame::before{left:-1px;top:-1px;border-width:1.5px 0 0 1.5px}
 .frame::after{right:-1px;bottom:-1px;border-width:0 1.5px 1.5px 0}
 
-.titlebar{position:fixed;z-index:4;top:max(36px,calc(env(safe-area-inset-top,0px) + 24px));left:max(36px,calc(env(safe-area-inset-left,0px) + 24px));right:420px;pointer-events:none}
+.titlebar{position:fixed;z-index:4;top:max(36px,calc(env(safe-area-inset-top,0px) + 24px));left:calc(max(12px,env(safe-area-inset-left,0px)) + 384px);right:96px;pointer-events:none}
 .titlebar .segnav{margin-bottom:16px}
 .titlebar h1{font-family:var(--f-display);font-weight:600;font-size:clamp(30px,3.6vw,44px);line-height:1.02;letter-spacing:-.03em;margin:0;color:var(--ink)}
 .titlebar p{margin:8px 0 0;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;color:var(--ink2);text-transform:uppercase}
@@ -59,10 +59,10 @@ body.zoomed .zt{display:none}
 /* tree name, shown for the zone in view */
 .tn{padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600;color:var(--label);pointer-events:none;white-space:nowrap}
 
-/* right: zones, then a zone's graves */
-.panel{position:fixed;z-index:5;top:max(12px,env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));
+/* left, as on the other pages: zones, then a zone's graves */
+.panel{position:fixed;z-index:5;top:max(12px,env(safe-area-inset-top,0px));left:max(12px,env(safe-area-inset-left,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));
   width:360px;border-radius:24px;display:flex;flex-direction:column;overflow:hidden;background:var(--glass-strong);
-  transform:translateX(calc(100% + 24px));transition:transform .7s var(--ease)}
+  transform:translateX(calc(-100% - 24px));transition:transform .7s var(--ease)}
 body.ready .panel{transform:none}
 .panel header{flex:none;padding:20px 20px 10px}
 .panel header small{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--label2)}
@@ -103,7 +103,7 @@ body.ready .panel{transform:none}
 .note b{color:var(--label);font-weight:600}
 
 /* bottom: zone switcher */
-.tabs{position:fixed;z-index:5;left:calc((100% - 384px) / 2);bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;
+.tabs{position:fixed;z-index:5;left:calc(384px + (100% - 384px) / 2);bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;
   display:flex;gap:2px;padding:5px;border-radius:999px;max-width:calc(100% - 420px);overflow-x:auto;scrollbar-width:none;transition:opacity .6s var(--ease) .2s,transform .6s var(--ease) .2s}
 body.ready .tabs{opacity:1;transform:translateX(-50%)}
 .tabs::-webkit-scrollbar{display:none}
@@ -113,12 +113,12 @@ body.ready .tabs{opacity:1;transform:translateX(-50%)}
 .tabs button[aria-pressed="true"]{background:var(--tint);color:var(--tint-ink)}
 .tabs button[aria-pressed="true"] small{color:inherit;opacity:.8}
 
-.north{position:fixed;z-index:4;top:max(36px,calc(env(safe-area-inset-top,0px) + 24px));right:396px;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;pointer-events:none}
+.north{position:fixed;z-index:4;top:max(36px,calc(env(safe-area-inset-top,0px) + 24px));right:max(36px,calc(env(safe-area-inset-right,0px) + 24px));width:48px;height:48px;border-radius:50%;display:grid;place-items:center;pointer-events:none}
 .north svg{width:30px;height:30px}
 .maplibregl-ctrl-scale{background:transparent;border-color:var(--ink2);color:var(--ink2);font-family:var(--f-mono);font-size:10px}
 .maplibregl-ctrl-attrib{background:var(--glass)!important;color:var(--ink2)!important;font-size:10px}
 .maplibregl-ctrl-attrib a{color:var(--ink2)!important}
-.maplibregl-ctrl-bottom-left{left:max(36px,calc(env(safe-area-inset-left,0px) + 24px));bottom:28px}
+.maplibregl-ctrl-bottom-left{left:calc(max(12px,env(safe-area-inset-left,0px)) + 384px);bottom:28px}
 
 body.nomap .tabs,body.nomap .north,body.nomap .frame{display:none}
 body.nomap .rise{opacity:1;transform:none}
@@ -140,7 +140,7 @@ body.nomap .rise{opacity:1;transform:none}
 .gn.picked{transform:scale(1.5);box-shadow:0 0 0 8px color-mix(in srgb,var(--mark) 30%,transparent),0 2px 6px rgba(0,0,0,.3)}
 
 /* opening a grave: the chrome steps aside, the camera dives onto the grave, and the grave page's stage blooms out of it */
-body.leaving .panel{transform:translateX(calc(100% + 24px))}
+body.leaving .panel{transform:translateX(calc(-100% - 24px))}
 body.leaving .tabs{opacity:0;transform:translate(-50%,20px)}
 body.leaving .rise,body.leaving .north,body.leaving .maplibregl-ctrl-bottom-left{opacity:0;transition:opacity .4s var(--ease)}
 body.leaving .gn:not(.picked){opacity:0;transition:opacity .3s}
@@ -180,6 +180,9 @@ body.bloom-on .bloom{opacity:1;transform:scale(3.2);transition:opacity .3s ease-
 <script src="assets/archive.js?v=15"></script>
 <script src="assets/map.js?v=8"></script>
 <script src="assets/nav.js?v=5"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="assets/site-model.js?v=1"></script>
 <script>
 (function(){
 const $ = id => document.getElementById(id);
@@ -329,6 +332,7 @@ function addContext(){
                'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 15.5, ['get', 'h']],
                'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 14, 0, 15.5, ['coalesce', ['get', 'base'], 0]],
                'fill-extrusion-opacity': .92, 'fill-extrusion-vertical-gradient': true } }, 'graves-3d');
+    if (window.SiteModel && SiteModel.has(site.id)) map.setLayoutProperty('ctx-3d', 'visibility', 'none');   // the textured model stands in for these blocks
     const text = (size, extra) => Object.assign({ 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Regular'], 'text-size': size,
       'text-letter-spacing': .08, 'text-max-width': 9 }, extra);
     const ink = { 'text-color': c.label, 'text-halo-color': c.halo, 'text-halo-width': 1.4 };
@@ -407,7 +411,7 @@ function showNums(l){
 }
 
 /* camera */
-const padding = () => mobile() ? { top: 110, bottom: 90, left: 30, right: 30 } : { top: 150, bottom: 110, left: 80, right: 440 };
+const padding = () => mobile() ? { top: 110, bottom: 90, left: 30, right: 30 } : { top: 150, bottom: 110, left: 440, right: 80 };
 function frame(bounds, opts){
   const cam = map.cameraForBounds(bounds, { padding: padding(), bearing: opts.bearing }) || {};
   return { center: cam.center || bounds.getCenter(), zoom: Math.min(opts.max || 21, (cam.zoom || 18) - (opts.less || 0)), bearing: opts.bearing, pitch: opts.pitch };
@@ -507,6 +511,7 @@ addEventListener('keydown', e => { if (e.key === 'Escape' && current) focusZone(
 showZones();
 map.on('load', () => {
   clearTimeout(failTimer); addLayers(); addContext();
+  if (window.SiteModel) SiteModel.add(map, site, c.dark, 'graves-3d');
   document.querySelectorAll('.maplibregl-ctrl-attrib').forEach(a => a.classList.remove('maplibregl-compact-show'));
   document.body.classList.add('ready');
   tags.forEach(t => t.addTo(map));
