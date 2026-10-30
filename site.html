@@ -507,6 +507,19 @@ map.on('click', e => {
 map.on('move', () => { $('needle').style.transform = `rotate(${-map.getBearing()}deg)`; });
 addEventListener('keydown', e => { if (e.key === 'Escape' && current) focusZone(''); });
 
+/* a slow drift around the site and its zones, as on the front page: it waits out camera moves and anyone at the
+   controls, and picks up again a few seconds after they let go */
+let lastTouch = 0, lastFrame = 0, drifting = false;
+['mousedown', 'touchstart', 'wheel'].forEach(t => map.getCanvas().addEventListener(t, () => { lastTouch = performance.now(); }, { passive: true }));
+addEventListener('keydown', () => { lastTouch = performance.now(); });
+function drift(now){
+  requestAnimationFrame(drift);
+  const dt = Math.min(now - lastFrame, 64), b = document.body.classList; lastFrame = now;
+  if (!b.contains('landed') || b.contains('leaving') || now - lastTouch < 8000 || map.isMoving() || map.isEasing()) return;
+  map.setBearing(map.getBearing() + dt * .0022);
+}
+function startDrift(){ if (!reduced && !drifting) { drifting = true; lastFrame = performance.now(); requestAnimationFrame(drift); } }
+
 /* the entry: a quick descent from the front page's view onto the site, then the zones light up */
 showZones();
 map.on('load', () => {
@@ -519,11 +532,11 @@ map.on('load', () => {
   let from = null; try { from = JSON.parse(sessionStorage.getItem('ode:return') || 'null'); sessionStorage.removeItem('ode:return'); } catch (e) {}
   const sl = start && L.find(x => x.zone === start), back = from && sl && from.zone === start.id && Date.now() - from.t < 15000 && sl.graves.find(x => x.n === from.grave);
   if (back) {   // came back from that grave: start where the dive ended and rise out to the zone
-    map.jumpTo(closeUp(back.at, bearing + 40)); document.body.classList.add('landed'); focusZone(start.id); return;
+    map.jumpTo(closeUp(back.at, bearing + 40)); document.body.classList.add('landed'); startDrift(); focusZone(start.id); return;
   }
   map.flyTo({ ...frame(all, { bearing, pitch: 55, max: 20, less: .1 }), duration: reduced ? 0 : 1600, curve: 1.2, essential: true });
   map.once('moveend', () => {
-    document.body.classList.add('landed'); const go = pending !== null ? pending : start && start.id;
+    document.body.classList.add('landed'); startDrift(); const go = pending !== null ? pending : start && start.id;
     if (go) setTimeout(() => focusZone(go), reduced ? 0 : 250);
   });
 });

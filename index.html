@@ -271,16 +271,19 @@ cards.forEach((c, i) => {
 });
 addEventListener('keydown', e => { if (e.key === 'Escape' && focused >= 0) showAll(); });
 
-/* a slow drift around the overview until someone takes the controls */
-let orbiting = false, last = 0;
+/* a slow drift around the overview; it gives way while someone has the controls and picks up again once they let go */
+let orbiting = false, last = 0, resume = 0;
 function startOrbit(){ if (reduced || focused >= 0 || orbiting) return; orbiting = true; last = performance.now(); requestAnimationFrame(orbit); }
 function stopOrbit(){ orbiting = false; }
 function orbit(now){
   if (!orbiting) return;
   const dt = Math.min(now - last, 64); last = now;
-  map.setBearing(map.getBearing() + dt * .0022); requestAnimationFrame(orbit);
+  if (!map.isMoving()) map.setBearing(map.getBearing() + dt * .0022);
+  requestAnimationFrame(orbit);
 }
-['mousedown', 'touchstart', 'wheel'].forEach(t => map.getCanvas().addEventListener(t, stopOrbit, { passive: true }));
+['mousedown', 'touchstart', 'wheel'].forEach(t => map.getCanvas().addEventListener(t, () => {
+  stopOrbit(); clearTimeout(resume); resume = setTimeout(startOrbit, 8000);
+}, { passive: true }));
 
 /* the north point follows the view */
 function readout(){ $('needle').style.transform = `rotate(${-map.getBearing()}deg)`; }

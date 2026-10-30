@@ -388,6 +388,9 @@ const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(38,1,0.01,1000);
 const controls=new THREE.OrbitControls(camera,canvas);
 controls.enableDamping=true; controls.maxPolarAngle=Math.PI*0.49;
+/* a slow turn around the grave while it is simply on view; it waits for the tour, the records and anyone dragging */
+let lastTouch=0; controls.autoRotateSpeed=.6;
+controls.addEventListener('start',()=>{ lastTouch=performance.now(); }); controls.addEventListener('end',()=>{ lastTouch=performance.now(); });
 scene.add(new THREE.HemisphereLight(0xf3f1e8,0x4f5a47,0.85));
 const sun=new THREE.DirectionalLight(0xfff6e6,0.95); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048); scene.add(sun,sun.target);
 const ground=new THREE.Mesh(new THREE.CircleGeometry(1,64),new THREE.ShadowMaterial({opacity:0.2}));
@@ -481,7 +484,9 @@ function placePin(){
 }
 pin.addEventListener('click',reveal);
 /* render loop: started at the end of the script, once everything it calls has been declared */
-function loop(now){ requestAnimationFrame(loop); now=now||performance.now(); stepTour(now); stepPose(now); stepIntro(now); if(!camLock) controls.update(); renderer.render(scene,camera); placePin(); placeDots();
+function loop(now){ requestAnimationFrame(loop); now=now||performance.now(); stepTour(now); stepPose(now); stepIntro(now);
+  controls.autoRotate=!reduced&&state==='closed'&&!tour.on&&!intro&&!fly&&!camLock&&controls.enabled&&now-lastTouch>6000;
+  if(!camLock) controls.update(); renderer.render(scene,camera); placePin(); placeDots();
   document.body.classList.toggle('recordopen', state==='open'||state==='photo'||state==='align');
   if(state==='peek') sheet.style.transform=computePath()[1];   // sheet stays tucked behind the grave while you orbit
 }
