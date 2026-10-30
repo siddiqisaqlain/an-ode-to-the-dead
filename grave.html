@@ -187,10 +187,10 @@ body.shown .toolbar{animation:toolIn .8s var(--ease) 1s backwards}
 .tb[aria-disabled="true"]{opacity:.3;pointer-events:none}
 a.tb{text-decoration:none}
 
-/* files: the grave's five folders, on a glass panel from the right */
-.files{position:absolute;z-index:7;top:calc(12px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));
+/* files: the grave's five folders, on a glass panel from the left (as the panels on the other pages) */
+.files{position:absolute;z-index:7;top:calc(12px + env(safe-area-inset-top,0px));left:max(12px,env(safe-area-inset-left,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));
   width:min(380px,calc(100% - 24px));border-radius:24px;display:flex;flex-direction:column;overflow:hidden;
-  background:var(--glass-strong);transform:translateX(calc(100% + 24px));transition:transform .45s var(--ease);visibility:hidden}
+  background:var(--glass-strong);transform:translateX(calc(-100% - 24px));transition:transform .45s var(--ease);visibility:hidden}
 .files.on{transform:none;visibility:visible}
 .files header{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 10px 20px}
 .files header h2{font-family:var(--f-display);font-weight:700;font-size:22px;letter-spacing:-.02em;margin:0}
