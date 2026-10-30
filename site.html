@@ -40,16 +40,21 @@ body.ready .veil{opacity:0}
 .rise{opacity:0;transform:translateY(12px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
 body.ready .rise{opacity:1;transform:none}
 
-/* zone tags: a short leader with the zone letter and its grave count */
+/* tags and grave numbers are placed by hand on every render (as on the front page), each in a .mk holder */
+.mk{position:absolute;top:0;left:0;z-index:1;will-change:transform}
+/* zone tags: a short leader with the zone letter; the name and grave count open beside it when pointed at */
 .zt{display:flex;flex-direction:column;align-items:center;cursor:pointer}
 .zt > *{opacity:0;transform:translateY(8px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
 body.landed .zt > *{opacity:1;transform:none}
-.zt-tag{display:flex;align-items:center;gap:7px;padding:4px 10px 4px 4px;border-radius:999px;white-space:nowrap;font-size:12.5px;font-weight:600;color:var(--label)}
+.zt-tag{display:flex;align-items:center;padding:4px;border-radius:999px;white-space:nowrap;font-size:12.5px;font-weight:600;color:var(--label);transition:padding .35s var(--ease),transform .35s var(--ease)}
+.zt-tag.glass{background:var(--glass-strong);-webkit-backdrop-filter:none;backdrop-filter:none}   /* moves every frame: no re-blur */
+.zt-tag span{display:block;max-width:0;opacity:0;overflow:hidden;transition:max-width .4s var(--ease),opacity .3s var(--ease),margin .4s var(--ease)}
+.zt:hover .zt-tag,.zt.hot .zt-tag{padding-right:10px;transform:translateY(-3px)}
+.zt:hover .zt-tag span,.zt.hot .zt-tag span{max-width:160px;opacity:1;margin-left:7px}
 .zt-tag b{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--mark);color:#fff;font-size:12px;font-weight:700}
-.zt-tag small{font-weight:500;color:var(--label2)}
+.zt-tag small{font-weight:500;color:var(--label2);margin-left:6px}
 .zt.tpl .zt-tag b{background:var(--label3)}
 .zt-stem{width:1px;height:var(--stem,28px);background:linear-gradient(var(--ink),color-mix(in srgb,var(--ink) 10%,transparent))}
-.zt:hover .zt-tag,.zt.hot .zt-tag{background:var(--glass-strong)}
 body.zoomed .zt{display:none}
 /* grave numbers, shown for the zone in view */
 .gn{display:grid;place-items:center;min-width:22px;height:22px;padding:0 5px;border-radius:11px;border:2px solid #fff;background:var(--ink);color:var(--paper);
@@ -382,15 +387,27 @@ function addLayers(){
              'fill-extrusion-opacity': .5, 'fill-extrusion-vertical-gradient': true } });
 }
 
-/* zone tags (overview) and grave numbers (inside a zone) */
+/* zone tags (overview) and grave numbers (inside a zone). Placed by hand on each render, as on the front page: a
+   maplibregl.Marker moves a frame behind the map and, over terrain, reads the depth buffer back from the GPU, so the tags
+   lagged while the camera drifts. pin() keeps the Marker calls the page uses (addTo, remove, getElement); anchor bottom. */
+const pins = new Set();
+function placePin(p){ const q = map.project(p.at); p.box.style.transform = `translate3d(${q.x}px,${q.y + p.dy}px,0) translate(-50%,-100%)`; }
+function pin(el, at, dy = 0){
+  const box = document.createElement('div'); box.className = 'mk'; box.appendChild(el);
+  const p = { box, at, dy, getElement: () => el,
+    addTo(){ map.getCanvasContainer().appendChild(box); pins.add(p); placePin(p); return p; },
+    remove(){ box.remove(); pins.delete(p); } };
+  return p;
+}
+map.on('render', () => pins.forEach(placePin));
 const tags = L.map((l, k) => {
   const el = document.createElement('div'); el.className = 'zt' + (l.zone.template ? ' tpl' : '');
   el.style.setProperty('--stem', (26 + (k % 3) * 30) + 'px');
-el.innerHTML = `<div class="zt-tag glass"><b>${l.zone.id}</b>Zone ${l.zone.id}<small>${l.graves.length || ''}</small></div><i class="zt-stem"></i>`;
+  el.innerHTML = `<div class="zt-tag glass"><b>${l.zone.id}</b><span>Zone ${l.zone.id}${l.graves.length ? `<small>${l.graves.length}</small>` : ''}</span></div><i class="zt-stem"></i>`;
   [...el.children].forEach(ch => ch.style.transitionDelay = (.05 * k) + 's');
   el.addEventListener('click', () => focusZone(l.zone.id));
   el.addEventListener('mouseenter', () => hotZone(l.zone.id)); el.addEventListener('mouseleave', () => hotZone(null));
-  return new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat(l.centre);
+  return pin(el, l.centre);
 });
 let nums = [];
 function showNums(l){
@@ -402,11 +419,11 @@ function showNums(l){
     el.addEventListener('click', () => openGrave(l.zone, g.n));
     el.addEventListener('mouseenter', () => hotGrave(g.n)); el.addEventListener('mouseleave', () => hotGrave(null));
     el.dataset.n = g.n;
-    return new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -6] }).setLngLat(g.at).addTo(map);
+    return pin(el, g.at, -6).addTo(map);
   });
   (l.trees || []).forEach(t => {
     const el = document.createElement('div'); el.className = 'tn glass'; el.textContent = t.name;
-    nums.push(new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -110] }).setLngLat(t.at).addTo(map));
+    nums.push(pin(el, t.at, -110).addTo(map));
   });
 }
 
