@@ -14,7 +14,10 @@ window.ARCHIVE = {
       /* at: where the zone lies (its centre), from the site key plan zone-maps/imambargah-hassanabad/site-reference.png, which was
          georeferenced against satellite imagery (centre 34.102826, 74.830186; 0.17 m per pixel; north up). This places the zones;
          span: the zone's east–west extent on the ground in metres, measured on the same key plan; each zone map was drawn at its
-         own scale to fit the sheet, so its plan is scaled to this. The sheet coordinates below are kept as recorded. */
+         own scale to fit the sheet, so its plan is scaled to this. The sheet coordinates below are kept as recorded.
+         north: every zone is turned 15° (anticlockwise seen from above), the angle of the building on Zone B's north edge; Zone B
+         is pinned to that building (pin), and the other zones keep their centres from the key plan. */
+      north: 15,
       /* count: number of graves, from each zone's map. lat/lng: the coordinates written on the zone's documented sheet
          (coordsFrom names that grave). Zone G's sheet repeats Zone F's coordinates, so they are marked for checking. */
       zones: [
@@ -28,6 +31,7 @@ window.ARCHIVE = {
         },
         {
           id: 'B', source: 'the zone map on the Grave 2 sheet', map: 'zone-maps/imambargah-hassanabad/zone-B.png', at: [34.10293, 74.830186], span: 24,
+          pin: { x: 1.56, z: 1.9, at: [34.102975, 74.830073] },   // the inner corner of the zone's notch, on the building's south-west corner
           count: 11, lat: 34.102911, lng: 74.830243, coordsFrom: 'Grave 2',
           boundary: [[0.0,0.0], [1.56,0.0], [1.56,1.9], [9.97,1.9], [9.97,3.12], [8.7,3.12], [8.63,7.96], [6.84,8.04], [5.51,7.81], [3.87,7.11], [2.38,6.18], [1.26,5.06], [0.52,3.94], [0.07,2.83]],
           graves: [
@@ -115,7 +119,6 @@ window.ARCHIVE = {
         {
           id: 'G', source: 'the zone map on Sheet 61', map: 'zone-maps/imambargah-hassanabad/zone-G.png', at: [34.1028, 74.830623], span: 24, count: 7,
           lat: 34.102778, lng: 74.830606, coordsFrom: 'Grave 2 (Sheet 61)', coordsCheck: 'Same as Zone F on Sheet 56',
-          north: 15,   // degrees clockwise from the top of the plan
           boundary: [[3.8, 0], [11.12, 0], [11.38, 8.12], [0, 8.32], [0.1, 5.05], [2.81, 4.98], [2.87, 5.64],
                      [3.73, 5.64], [3.73, 3.66], [3.3, 3.66], [3.3, 3], [3.8, 3]],
           graves: [

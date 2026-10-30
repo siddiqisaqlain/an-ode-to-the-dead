@@ -59,16 +59,18 @@ window.MapKit = (function(){
   }
 
   /* ---------- placing zone plans on the map ----------
-     If the site key plan marks where a zone lies (zone.at), the zone's centre goes there. Otherwise the zone's sheet coordinate is
-     used: the sheet names the grave it was taken at (coordsFrom), and that grave's plan position is pinned to the coordinate and the plan is turned so its north matches (zone.north: degrees clockwise from the top of the plan).
+     If a point of the zone plan is pinned to the ground (zone.pin: plan x, z and its lat/lng), the plan is set by that point. Otherwise,
+     if the site key plan marks where a zone lies (zone.at), the zone's centre goes there. Otherwise the zone's sheet coordinate is
+     used: the sheet names the grave it was taken at (coordsFrom), and that grave's plan position is pinned to the coordinate and the plan is turned so its north matches (zone.north, or the site's north for all its zones: degrees clockwise from the top of the plan).
      Zones without a recorded coordinate are set around the site's reference point, one beside the next. */
   const M = 111320;
   function framer(site, zone, slot, slots){
-    const th = (zone.north || 0) * Math.PI / 180, cos = Math.cos(th), sin = Math.sin(th), b = zone.boundary;
+    const th = (zone.north ?? site.north ?? 0) * Math.PI / 180, cos = Math.cos(th), sin = Math.sin(th), b = zone.boundary;
     const hit = /Grave (\d+)/.exec(zone.coordsFrom || ''), g = hit && zone.graves.find(x => x.n === +hit[1] && x.plan);
     let ax, az, lat, lng, how;
     const centre = () => { const xs = b.map(p => p[0]), zs = b.map(p => p[1]); return [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...zs) + Math.max(...zs)) / 2]; };
-    if (zone.at) { [ax, az] = centre(); [lat, lng] = zone.at; how = 'reference'; }   // the site key plan marks where the zone lies
+    if (zone.pin) { ax = zone.pin.x; az = zone.pin.z; [lat, lng] = zone.pin.at; how = 'reference'; }   // a plan point sits on a known corner
+    else if (zone.at) { [ax, az] = centre(); [lat, lng] = zone.at; how = 'reference'; }   // the site key plan marks where the zone lies
     else if (zone.lat && g) { ax = g.plan.x; az = g.plan.z; lat = zone.lat; lng = zone.lng; how = 'sheet'; }
     else {
       const xs = b.map(p => p[0]), zs = b.map(p => p[1]);
