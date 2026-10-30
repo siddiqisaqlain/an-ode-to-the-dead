@@ -26,6 +26,8 @@ Zones fill in over time:
 - `assets/archive.js`: the data (sites, zones, graves, files, photo poses, tours)
 - `assets/context.js`: the about page's data (funder, method, outline types, Sheet 61 conventions, field notes), from the project's own records; counts are worked out from `archive.js`
 - `assets/models.js`: the default 3D grave
+- `assets/detail.js`: the setting around a site on its zones page: canal, open ground, compound walls, trees, and landmark buildings (Imambargah with its stepped roof, Jamia Masjid), traced from the site key plan and read against aerial views. Heights are estimates
+- `assets/detail-houses.js`: indicative house massing round Hassanabad, generated (not surveyed) in the blocks between OpenStreetMap roads, clear of the canal, graveyard and open ground
 - `assets/weather.js`: live weather over the front page's map, Srinagar's current conditions from [Open-Meteo](https://open-meteo.com/) (no key; nothing about the visitor is sent), refreshed every 15 minutes. Preview a condition with `?weather=clear|cloudy|fog|drizzle|rain|snow|storm` and `&night=1`
 - `assets/site.css`: shared styles
 - `assets/nav.js`: the top bar (segmented trail, slide back)

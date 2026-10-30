@@ -174,6 +174,8 @@ body.bloom-on .bloom{opacity:1;transform:scale(3.2);transition:opacity .3s ease-
 <script src="assets/archive.js?v=6"></script>
 <script src="assets/context.js?v=5"></script>
 <script src="assets/map.js?v=5"></script>
+<script src="assets/detail-houses.js?v=1"></script>
+<script src="assets/detail.js?v=1"></script>
 <script src="assets/nav.js?v=5"></script>
 <script>
 (function(){
@@ -259,6 +261,7 @@ map.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: 'metric' }), '
 const failTimer = setTimeout(() => { if (!map.loaded()) document.body.classList.add('nomap', 'ready', 'landed'); }, 12000);
 
 function addLayers(){
+  SiteDetail.add(map, site, c);   // the setting around the zones, where it has been traced
   map.addSource('zones', { type: 'geojson', data: G.zones });
   map.addSource('graves', { type: 'geojson', data: G.graves });
   const st = (k, on, off) => ['case', ['boolean', ['feature-state', k], false], on, off];
