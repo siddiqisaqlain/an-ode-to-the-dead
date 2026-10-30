@@ -31,14 +31,26 @@ html{scroll-behavior:smooth}
 /* in-page sections: a second segmented bar beside the trail; the section in view is marked, and the bar scrolls sideways on a phone */
 .secnav{position:relative;display:flex;gap:2px;padding:4px;border-radius:999px;max-width:100%;overflow-x:auto;scrollbar-width:none}
 .secnav::-webkit-scrollbar{display:none}
-.secnav a{flex:none;display:flex;align-items:center;gap:7px;height:34px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:500;color:var(--label2);text-decoration:none;white-space:nowrap;transition:color .25s,background .25s}
-.secnav a b{font-family:var(--f-mono);font-size:10.5px;font-weight:500;color:var(--mark)}
+/* like the top bar: one thumb slides under the section in view, with a line that fills as you read through it */
+.secnav a{position:relative;z-index:1;flex:none;display:flex;align-items:center;gap:7px;height:34px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:500;letter-spacing:-.01em;
+  color:var(--label2);text-decoration:none;white-space:nowrap;-webkit-tap-highlight-color:transparent;transition:color .25s,background .25s,transform .18s var(--ease)}
+.secnav a b{font-family:var(--f-mono);font-size:10.5px;font-weight:500;color:var(--mark);transition:opacity .25s}
+.secnav a + a::before{content:"";position:absolute;left:-1px;top:10px;bottom:10px;width:1px;background:var(--hair);transition:opacity .25s}
+.secnav a.on::before,.secnav a.on + a::before,.secnav a:hover::before,.secnav a:hover + a::before{opacity:0}
 .secnav a:hover{color:var(--label);background:var(--fill)}
-.secnav a.on{color:var(--label);background:var(--card);box-shadow:0 3px 10px rgba(0,0,0,.12),0 0 0 .5px var(--hair)}
+.secnav a.on{color:var(--label);font-weight:600;background:transparent}
+.secnav a:active{transform:scale(.94)}
+.secnav a:focus-visible{outline:2px solid var(--tint);outline-offset:-2px}
+.sec-thumb{position:absolute;left:0;top:4px;height:34px;width:0;border-radius:999px;background:var(--card);overflow:hidden;pointer-events:none;opacity:0;
+  box-shadow:0 3px 10px rgba(0,0,0,.12),0 0 0 .5px var(--hair);
+  transition:transform .5s cubic-bezier(.3,1.3,.45,1),width .5s cubic-bezier(.3,1.3,.45,1),opacity .3s}
+.sec-thumb.show{opacity:1}
+.sec-thumb.still{transition:opacity .3s}
+.sec-thumb i{position:absolute;left:14px;right:14px;bottom:3px;height:2px;border-radius:1px;background:var(--mark);opacity:.85;transform-origin:left;transform:scaleX(var(--p,0))}
 .secnav{opacity:0;transform:translateY(-8px);animation:secin .7s var(--ease) .3s forwards}
 @keyframes secin{to{opacity:1;transform:none}}
 @media (max-width:640px){ .secnav{flex:1 1 100%} .secnav a{padding:0 12px;font-size:13px} }
-@media (prefers-reduced-motion:reduce){ .secnav{animation:none;opacity:1;transform:none} }
+@media (prefers-reduced-motion:reduce){ .secnav{animation:none;opacity:1;transform:none} .sec-thumb,.secnav a{transition:none} }
 .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
 .k{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2)}
 .card{background:var(--glass-strong);border:.5px solid var(--hair);border-radius:20px;padding:22px}
@@ -576,15 +588,29 @@ addEventListener('scroll', () => {
 }, { passive: true });
 top.addEventListener('focusin', () => top.classList.remove('away'));
 
-/* the section bar marks the section in view */
+/* the section bar marks the section in view: a thumb slides under it, and its line fills as you read through the section.
+   After a click the thumb goes straight to the chosen section and stays there while the page scrolls to it. */
 const secs = [...document.querySelectorAll('#secnav a')].map(a => ({ a, el: document.querySelector(a.getAttribute('href')) })).filter(x => x.el);
+const thumb = document.createElement('i'); thumb.className = 'sec-thumb still'; thumb.setAttribute('aria-hidden', 'true'); thumb.innerHTML = '<i></i>';
+$('secnav').prepend(thumb);
+let chosen = null, chosenT = 0;
 function mark(){
   const y = innerHeight * .35; let cur = null;
   secs.forEach(x => { if (x.el.getBoundingClientRect().top <= y) cur = x; });
-  secs.forEach(x => x.a.classList.toggle('on', x === cur));
+  if (chosen && Date.now() - chosenT < 1500) cur = chosen; else chosen = null;
+  secs.forEach(x => { x.a.classList.toggle('on', x === cur); if (x === cur) x.a.setAttribute('aria-current', 'true'); else x.a.removeAttribute('aria-current'); });
+  if (cur) {
+    const r = cur.el.getBoundingClientRect(), p = Math.min(1, Math.max(0, (y - r.top) / r.height));
+    thumb.style.transform = `translateX(${cur.a.offsetLeft}px)`; thumb.style.width = cur.a.offsetWidth + 'px'; thumb.style.setProperty('--p', p.toFixed(3));
+    if (!thumb.classList.contains('show')) { thumb.classList.add('show'); requestAnimationFrame(() => requestAnimationFrame(() => thumb.classList.remove('still'))); }
+  } else { thumb.classList.remove('show'); thumb.classList.add('still'); }
   if (cur && innerWidth <= 640) { const n = $('secnav'), a = cur.a; if (a.offsetLeft < n.scrollLeft || a.offsetLeft + a.offsetWidth > n.scrollLeft + n.clientWidth) n.scrollTo({ left: a.offsetLeft - 12, behavior: 'smooth' }); }
 }
 addEventListener('scroll', mark, { passive: true }); addEventListener('resize', mark); mark();
+secs.forEach(x => x.a.addEventListener('click', () => { chosen = x; chosenT = Date.now(); mark(); }));
+if (document.fonts) document.fonts.ready.then(mark);
+addEventListener('scrollend', () => { if (chosen) { chosen = null; mark(); } });
+addEventListener('wheel', () => { chosen = null; }, { passive: true }); addEventListener('touchstart', () => { chosen = null; }, { passive: true });
 
 /* reveal as things scroll in */
 const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' }) : null;
