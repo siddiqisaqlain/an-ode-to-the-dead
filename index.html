@@ -81,9 +81,11 @@ body.landed .index li:nth-child(2){transition-delay:.12s} body.landed .index li:
 .foot a:hover{text-decoration:underline}
 
 /* site markers: a dimension-style leader with a tag */
-.sm{display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.sm{position:absolute;top:0;left:0;z-index:1;display:flex;flex-direction:column;align-items:center;cursor:pointer;will-change:transform}
 .sm > *{opacity:0;transform:translateY(10px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
 body.landed .sm > *{opacity:1;transform:none}
+/* the tag moves every frame, so it takes a near-opaque fill rather than re-blurring the map behind it */
+.sm-tag.glass{background:var(--glass-strong);-webkit-backdrop-filter:none;backdrop-filter:none}
 .sm-tag{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;white-space:nowrap;font-size:13px;font-weight:600;letter-spacing:-.01em;color:var(--label)}
 .sm-tag b{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--paper);font-family:var(--f-mono);font-size:10.5px;font-weight:500;transition:background .3s}
 .sm-stem{width:1px;height:var(--stem,46px);background:linear-gradient(var(--ink),color-mix(in srgb,var(--ink) 15%,transparent))}
@@ -220,7 +222,9 @@ function pulse(now){
   requestAnimationFrame(pulse);
 }
 
-/* markers: a leader line rising from the site to a numbered tag; Madeen Sahab sits 2 km from Hassanabad, so its leader is taller */
+/* markers: a leader line rising from the site to a numbered tag; Madeen Sahab sits 2 km from Hassanabad, so its leader is taller.
+   Placed by hand on each render rather than as maplibregl.Marker: a Marker moves a frame behind the map and, over terrain, reads the
+   depth buffer back from the GPU to test whether hills cover it, which stalls the orbit. These sit in the valley floor and are never covered. */
 const STEMS = [46, 104, 46];
 const markers = sites.map((s, i) => {
   const el = document.createElement('div'); el.className = 'sm'; el.style.setProperty('--stem', (STEMS[i] || 46) + 'px');
@@ -228,9 +232,14 @@ const markers = sites.map((s, i) => {
   [...el.children].forEach((c, k) => c.style.transitionDelay = (.18 * i + .08 * (2 - k)) + 's');
   el.addEventListener('click', e => { e.stopPropagation(); focus(i); });
   el.addEventListener('mouseenter', () => hot(i)); el.addEventListener('mouseleave', () => hot(null));
-  return new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([s.lng, s.lat]).addTo(map);
+  map.getCanvasContainer().appendChild(el);
+  return el;
 });
-function hot(i){ markers.forEach((m, j) => m.getElement().classList.toggle('hot', j === i)); }
+function placeMarkers(){
+  sites.forEach((s, i) => { const p = map.project([s.lng, s.lat]); markers[i].style.transform = `translate3d(${p.x}px,${p.y}px,0) translate(-50%,-100%)`; });
+}
+map.on('render', placeMarkers);
+function hot(i){ markers.forEach((m, j) => m.classList.toggle('hot', j === i)); }
 
 /* camera: the overview frames the three sites; focusing flies low over one */
 function overview(){
@@ -246,7 +255,7 @@ function focus(i){
   if (focused === i) return;
   focused = i; stopOrbit();
   cards.forEach((c, j) => c.classList.toggle('on', j === i));
-  markers.forEach((m, j) => m.getElement().classList.toggle('dim', j !== i));
+  markers.forEach((m, j) => m.classList.toggle('dim', j !== i));
   const s = sites[i], url = Archive.siteURL(s), ms = reduced ? 0 : ENTER_MS;
   document.documentElement.style.setProperty('--enter', ms + 'ms');
   if (mobile()) cards[i].scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', inline: 'center', block: 'nearest' });
@@ -255,7 +264,7 @@ function focus(i){
   map.once('moveend', () => { if (focused === i) location.href = url; });
 }
 function showAll(){
-  focused = -1; cards.forEach(c => c.classList.remove('on')); markers.forEach(m => m.getElement().classList.remove('dim'));
+  focused = -1; cards.forEach(c => c.classList.remove('on')); markers.forEach(m => m.classList.remove('dim'));
   document.body.classList.remove('focused');
   map.flyTo({ ...overview(), duration: reduced ? 0 : 2800, curve: 1.3, essential: true });
   map.once('moveend', () => setTimeout(startOrbit, 600));
