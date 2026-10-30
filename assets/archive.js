@@ -15,7 +15,7 @@ window.ARCHIVE = {
          paths, the precinct outline). Traced and classified in QGIS from satellite imagery, building footprints and OpenStreetMap,
          and shifted 3.5 m W / 1.5 m S into the base map's OpenStreetMap frame. Heights are estimates, not measured.
          survey: the figures from the same survey, shown in the panel; each zone's survey describes its enclosure on the ground. */
-      context: 'assets/context/imambargah-hassanabad.geojson?v=4',
+      context: 'assets/context/imambargah-hassanabad.geojson?v=5',
       survey: {
         precinct: 10842, ground: 1586.5, date: 'October 2026',
         landmarks: [
