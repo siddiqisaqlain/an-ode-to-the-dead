@@ -2,7 +2,9 @@
    Traced by hand from the site key plan (zone-maps/<site>/site-reference.png) and read against aerial 3D views of the
    site (Google Earth, October 2026). The imagery is only the reference; nothing from it is embedded. Positions are in
    key-plan pixels and converted with the plan's georeference, so they share the zones' placement. Heights are estimates.
-   Needs MapLibre GL. */
+   Where a site has a 3D model (model: a .glb built in Blender from this same tracing, with real roof forms and textures),
+   the model replaces the extruded blocks inside its area and is drawn with three.js; elsewhere, and if three.js is
+   missing, the blocks stay. Needs MapLibre GL (and three.js r128 with GLTFLoader for the model). */
 window.SiteDetail = (function(){
   const M = 111320;
   /* a stepped roof: n tiers from scale s0 at height h0 to scale s1 at height h1, so a hipped or pyramidal roof reads in the massing */
@@ -12,6 +14,9 @@ window.SiteDetail = (function(){
   const DATA = {
     'imambargah-hassanabad': {
       ref: { lat: 34.102826, lng: 74.830186, px: [810, 540], mpp: .17 },
+      /* model: metres east/north of ref, x east, y up, z south; box = the area it covers [west, east, south, north] in metres.
+         Textures: Poly Haven (CC0). Each vertex's second UV is where it meets the ground (east, 1 - north). */
+      model: { url: 'assets/models/imambargah-hassanabad.glb', box: [-95, 125, -100, 100] },
       ground: [
         { kind: 'earth', pts: [[450,330],[600,345],[660,355],[720,345],[860,295],[1000,240],[1080,300],[1110,420],[1185,600],[1185,655],[880,705],[850,560],[820,520],[720,480],[560,520],[470,500]] },
         { kind: 'field', pts: [[875,705],[1185,655],[1185,598],[1330,590],[1345,700],[1350,900],[1290,902],[1090,905],[1090,965],[870,960],[850,800]] },
@@ -92,8 +97,9 @@ window.SiteDetail = (function(){
     };
   }
 
-  function build(d, k){
+  function build(d, k, use3d){
     const { ref } = d, kl = M * Math.cos(ref.lat * Math.PI / 180);
+    const box = use3d && d.model.box, inBox = (e, n) => box && e >= box[0] && e <= box[1] && n >= box[2] && n <= box[3];
     const ll = ([x, y]) => [ref.lng + (x - ref.px[0]) * ref.mpp / kl, ref.lat - (y - ref.px[1]) * ref.mpp / M];
     const poly = (pts, props) => ({ type: 'Feature', properties: props, geometry: { type: 'Polygon', coordinates: [pts.concat([pts[0]]).map(ll)] } });
     const rect = (c, w, dd, turn) => {
@@ -106,24 +112,24 @@ window.SiteDetail = (function(){
     const ground = d.ground.map(g => poly(g.pts, { kind: g.kind }));
     const solids = [], canopy = [], labels = [];
     d.buildings.forEach(b => {
-      b.tiers.forEach(([s, base, top]) => {
+      if (!use3d) b.tiers.forEach(([s, base, top]) => {
         const pts = b.r ? circle(b.c, b.r * s, 8) : rect(b.c, b.w * s, b.d * s, b.turn);
         solids.push(poly(pts, { base, top, color: k[b.color] }));
       });
       if (b.name) labels.push({ type: 'Feature', properties: { name: b.name, h: b.tiers[b.tiers.length - 1][2] }, geometry: { type: 'Point', coordinates: ll(b.c) } });
     });
-    d.rings.forEach(r => {
+    if (!use3d) d.rings.forEach(r => {
       const outer = circle(r.c, r.r, 28), inner = circle(r.c, r.r - r.t, 28).reverse();
       solids.push({ type: 'Feature', properties: { base: 0, top: r.h, color: k.wall },
         geometry: { type: 'Polygon', coordinates: [outer.concat([outer[0]]).map(ll), inner.concat([inner[0]]).map(ll)] } });
     });
     const t = px(.45) / 2;   // walls: 45 cm thick, about head height
-    d.walls.forEach(line => line.slice(1).forEach((q, i) => {
+    if (!use3d) d.walls.forEach(line => line.slice(1).forEach((q, i) => {
       const p = line[i], dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy), nx = -dy / l * t, ny = dx / l * t;
       solids.push(poly([[p[0] + nx, p[1] + ny], [q[0] + nx, q[1] + ny], [q[0] - nx, q[1] - ny], [p[0] - nx, p[1] - ny]], { base: 0, top: 1.7, color: k.wall }));
     }));
     /* trees: a trunk, then a crown of stacked, slightly offset discs, so it reads round and uneven rather than as a drum */
-    d.trees.forEach(([x, y, kind], i) => {
+    if (!use3d) d.trees.forEach(([x, y, kind], i) => {
       const v = ((i * 37) % 10) / 10, poplar = kind === 'poplar', j = n => (((i * 53 + n * 29) % 17) / 17 - .5);
       solids.push(poly(circle([x, y], px(poplar ? .25 : .4), 6), { base: 0, top: poplar ? 4 : 5, color: k.trunk }));
       const r = poplar ? 1.5 + v * .4 : 3.4 + v * 1.6, h0 = poplar ? 3 : 4, h1 = poplar ? 16 + v * 4 : 11 + v * 4;
@@ -137,6 +143,7 @@ window.SiteDetail = (function(){
        (narrowing across the depth only) or hipped (narrowing both ways) */
     const houses = [];
     ((window.SiteDetailHouses || {})[d.id] || []).forEach(([e, n, w, dd, turn, h, roof, hip], i) => {
+      if (inBox(e, n)) return;   // the model has the real houses here
       const c = [ref.px[0] + e / ref.mpp, ref.px[1] - n / ref.mpp];
       houses.push(poly(rect(c, px(w), px(dd), turn), { base: 0, top: h, color: k.walls[i % 3] }));
       steps(1.04, .14, h, h + 2.8, 4).forEach(([sc, b, t]) => houses.push(poly(rect(c, px(w * (hip ? Math.max(sc, .45) : 1.04)), px(dd * sc), turn), { base: b, top: t, color: k.roofs[roof] })));
@@ -151,10 +158,76 @@ window.SiteDetail = (function(){
     return { ground: fc(ground), paths: fc(paths), houses: fc(houses), solids: fc(solids), canopy: fc(canopy), labels: fc(labels) };
   }
 
+  /* the site model as a three.js layer on the map. Each vertex is raised to the terrain under its anchor (a building's
+     or tree's footprint centre, so it stays rigid; a wall's own position, so it follows the ground). */
+  function modelLayer(map, d, dark){
+    const ref = d.ref, kl = M * Math.cos(ref.lat * Math.PI / 180), origin = [ref.lng, ref.lat];
+    const lngLat = (x, y) => [ref.lng + x / kl, ref.lat + y / M];
+    let scene, camera, renderer, model = null, merc = null, seatedAt = null;
+    function seat(){
+      const terrain = !!map.terrain, e0 = terrain ? map.queryTerrainElevation(origin) : 0;
+      if (e0 == null) return;
+      const probe = terrain ? [[-60, -60], [90, 60], [0, 80]].map(([x, y]) => map.queryTerrainElevation(lngLat(x, y))).join() : '';
+      if (seatedAt === e0 + probe) return;   // terrain unchanged since the last seating
+      seatedAt = e0 + probe;
+      const step = 3, cache = new Map();
+      const rise = (x, y) => {
+        const gx = Math.round(x / step), gy = Math.round(y / step), key = gx + ',' + gy;
+        if (!cache.has(key)) { const v = terrain ? map.queryTerrainElevation(lngLat(gx * step, gy * step)) : 0; cache.set(key, v == null ? 0 : v - e0); }
+        return cache.get(key);
+      };
+      model.traverse(o => {
+        if (!o.isMesh || !o.geometry.attributes.uv2) return;
+        const p = o.geometry.attributes.position, a = o.geometry.attributes.uv2;
+        const y0 = o.userData.y0 || (o.userData.y0 = Float32Array.from({ length: p.count }, (_, i) => p.getY(i)));
+        for (let i = 0; i < p.count; i++) p.setY(i, y0[i] + rise(a.getX(i), 1 - a.getY(i)));
+        p.needsUpdate = true; o.geometry.computeBoundingSphere();
+      });
+      merc = maplibregl.MercatorCoordinate.fromLngLat(origin, e0);
+      map.triggerRepaint();
+    }
+    return {
+      id: 'detail-model', type: 'custom', renderingMode: '3d',
+      onAdd(m, gl){
+        camera = new THREE.Camera(); scene = new THREE.Scene();
+        scene.add(new THREE.HemisphereLight(dark ? 0x8a93a3 : 0xe4ecf5, dark ? 0x2a2622 : 0x6b5f4f, dark ? .55 : .9));
+        const sun = new THREE.DirectionalLight(dark ? 0xb8c4d8 : 0xfff2dc, dark ? .6 : 1.5);
+        sun.position.set(-.47, .74, .47); scene.add(sun);   // from the south-west, about 48 degrees up (x east, y up, z south)
+        renderer = new THREE.WebGLRenderer({ canvas: m.getCanvas(), context: gl, antialias: true });
+        renderer.autoClear = false; renderer.outputEncoding = THREE.sRGBEncoding;
+        new THREE.GLTFLoader().load(d.model.url, gltf => {
+          model = gltf.scene;
+          model.traverse(o => {
+            if (!o.isMesh || !o.material) return;
+            /* soft Phong instead of the physical material: with no sky to reflect, physical tin and plaster turn silvery
+               at grazing angles; glass and metal keep a little shine */
+            const mt = o.material, shiny = mt.metalness > .5 || mt.roughness < .5;
+            o.material = new THREE.MeshPhongMaterial({ map: mt.map, normalMap: mt.normalMap, normalScale: new THREE.Vector2(.6, .6),
+              color: mt.color, vertexColors: !!o.geometry.attributes.color, shininess: shiny ? 30 : 4, specular: shiny ? 0x333333 : 0x0a0a0a });
+            mt.dispose();
+          });
+          scene.add(model); seat();
+        }, undefined, err => console.warn('Site model did not load', err));
+        m.on('idle', () => { if (model) seat(); });
+      },
+      render(gl, args){
+        if (!model || !merc) return;
+        const z = map.getZoom(); if (z < 14.5) return;
+        const grow = Math.min(1, (z - 14.5) / 1.5), s = merc.meterInMercatorCoordinateUnits();   // rises with the zoom, like the blocks
+        const mm = args && args.defaultProjectionData ? args.defaultProjectionData.mainMatrix : args;
+        const l = new THREE.Matrix4().makeTranslation(merc.x, merc.y, merc.z).scale(new THREE.Vector3(s, -s, s))
+          .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2)).multiply(new THREE.Matrix4().makeScale(1, grow, 1));
+        camera.projectionMatrix = new THREE.Matrix4().fromArray(mm).multiply(l);
+        renderer.resetState(); renderer.render(scene, camera);
+      }
+    };
+  }
+
   /* adds the detail under the zones and graves; call before the page adds its own layers */
   function add(map, site, c){
     const d = DATA[site.id]; if (!d) return false;
-    const k = colors(c.dark), g = build(Object.assign({ id: site.id }, d), k), tex = textures(k);
+    const use3d = !!(d.model && window.THREE && THREE.GLTFLoader);
+    const k = colors(c.dark), g = build(Object.assign({ id: site.id }, d), k, use3d), tex = textures(k);
     Object.entries(tex).forEach(([id, img]) => { if (!map.hasImage(id)) map.addImage(id, img, { pixelRatio: 2 }); });
     ['ground', 'paths', 'houses', 'solids', 'canopy', 'labels'].forEach(s => map.addSource('detail-' + s, { type: 'geojson', data: g[s] }));
     const below = map.getLayer('buildings') ? 'buildings' : undefined;
@@ -174,6 +247,7 @@ window.SiteDetail = (function(){
     map.addLayer({ id: 'detail-canopy', type: 'fill-extrusion', source: 'detail-canopy', minzoom: 14.5,
       paint: { 'fill-extrusion-color': ['get', 'color'], 'fill-extrusion-height': rise(['get', 'top']), 'fill-extrusion-base': rise(['get', 'base']),
                'fill-extrusion-opacity': .62, 'fill-extrusion-vertical-gradient': true } });
+    if (use3d) map.addLayer(modelLayer(map, d, c.dark), below);
     map.addLayer({ id: 'detail-labels', type: 'symbol', source: 'detail-labels', minzoom: 16.5,
       layout: { 'text-field': ['upcase', ['get', 'name']], 'text-font': ['case', ['get', 'water'], ['literal', ['Noto Sans Italic']], ['literal', ['Noto Sans Regular']]],
                 'text-size': 10, 'text-letter-spacing': .2, 'text-offset': [0, -1.2], 'text-allow-overlap': false },
