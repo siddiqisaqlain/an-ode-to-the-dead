@@ -11,6 +11,20 @@ window.ARCHIVE = {
   sites: [
     {
       id: 'imambargah-hassanabad', name: 'Imambargah, Hassanabad', place: 'Rainawari, Srinagar', lat: 34.102778, lng: 74.830606,
+      /* context: the site survey drawn under the zones (buildings with eave heights, trees, grass, bare earth, the canal, walls,
+         paths, the precinct outline). Traced and classified in QGIS from satellite imagery, building footprints and OpenStreetMap,
+         and shifted 3.5 m W / 1.5 m S into the base map's OpenStreetMap frame. Heights are estimates, not measured.
+         survey: the figures from the same survey, shown in the panel; each zone's survey describes its enclosure on the ground. */
+      context: 'assets/context/imambargah-hassanabad.geojson?v=4',
+      survey: {
+        precinct: 10842, ground: 1586.5, date: 'October 2026',
+        landmarks: [
+          { name: 'Jamia Masjid Hassanabad', footprint: 989, height: '9 m eaves · 13 m ridge (est.)', note: 'pitched metal roof with a central octagon' },
+          { name: 'Imambargah Hassanabad', footprint: 868, height: '8 m eaves · 18 m apex (est.)', note: 'three-tier pyramidal roof' },
+          { name: 'Shrine enclosure, Zone G', footprint: 39, height: 'walls about 2.2 m (est.)', note: 'whitewashed brick walls with a dark coping, open to the sky, on a paved platform' }
+        ],
+        setting: 'The precinct lies between Hassan Abad Road and the canal, about 80 m to the east; an open ground lies to the south-east.'
+      },
       /* at: where the zone lies (its centre), from the site key plan zone-maps/imambargah-hassanabad/site-reference.png, which was
          georeferenced against satellite imagery (centre 34.102826, 74.830186; 0.17 m per pixel; north up). This places the zones;
          span: the zone's east–west extent on the ground in metres, measured on the same key plan; each zone map was drawn at its
@@ -19,8 +33,12 @@ window.ARCHIVE = {
          (coordsFrom names that grave). Zone G's sheet repeats Zone F's coordinates, so they are marked for checking. */
       zones: [
         {
-          id: 'A', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-A.png', at: [34.10302, 74.829712], span: 22,
+          /* at: moved 20 m toward Zone B (19.5 m E, 4.5 m S) from the key plan's [34.10302, 74.829712]; maximum push —
+             1.2 m from Zone B, touching the Imambargah entrance on the south */
+          id: 'A', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-A.png', at: [34.10298, 74.829924], span: 22,
           count: 1, lat: 34.102989, lng: 74.829878, coordsFrom: 'Grave 1',
+          survey: { area: 698, confidence: 'medium', cover: 'bare earth 76% · hard ground 11% · trees 7% · grass 6%', near: 'Jamia Masjid 7 m · Imambargah 11 m',
+            setting: 'Open graveyard plot between the lane west of the Jamia Masjid and the Masjid Sajadia houses, north of the path to the Imambargah.', sheet: 'The sheet coordinate falls inside the surveyed plot.' },
           boundary: [[0.0,0.0], [10.16,0.0], [10.16,8.78], [0.0,8.78]],
           graves: [
             { n: 1, plan: { x: 4.95, z: 7.07, w: 0.37, d: 0.97 } }
@@ -29,6 +47,11 @@ window.ARCHIVE = {
         {
           id: 'B', source: 'the zone map on the Grave 2 sheet', map: 'zone-maps/imambargah-hassanabad/zone-B.png', at: [34.10293, 74.830186], span: 24,
           count: 11, lat: 34.102911, lng: 74.830243, coordsFrom: 'Grave 2',
+          survey: { area: 256, confidence: 'medium', cover: 'trees 48% · bare earth 26% · hard ground 13% · building 12%', near: 'Grey-roofed building, adjoining · Imambargah 2 m',
+            setting: 'Below the grey-roofed building north of the Imambargah, edged on the south-west by the curved earth path (the curve on the zone map).', sheet: 'The sheet coordinate falls inside the surveyed area.' },
+          /* fits: survey buildings drawn squared against this zone's plan instead of at their surveyed angle. corner: the plan point
+             of the building's south-west corner (a boundary vertex); w runs east and d north from it, in metres on the ground. */
+          fits: [{ id: 'B05', corner: [1.56, 1.9], w: 12.0, d: 14.4 }],
           boundary: [[0.0,0.0], [1.56,0.0], [1.56,1.9], [9.97,1.9], [9.97,3.12], [8.7,3.12], [8.63,7.96], [6.84,8.04], [5.51,7.81], [3.87,7.11], [2.38,6.18], [1.26,5.06], [0.52,3.94], [0.07,2.83]],
           graves: [
             { n: 1, plan: { x: 8.65, z: 2.34, w: 0.26, d: 0.89 } },
@@ -47,6 +70,8 @@ window.ARCHIVE = {
         {
           id: 'C', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-C.png', at: [34.102974, 74.830383], span: 18,
           count: 21, lat: 34.102952, lng: 74.830341, coordsFrom: 'Grave 1',
+          survey: { area: 162, confidence: 'low', cover: 'bare earth 41% · grass 41% · trees 18%', near: 'Grey-roofed building 6 m · shrine 11 m',
+            setting: 'Walled enclosure south of the tree grove (Zone E) and north of the paved walkway; its walls are hard to read under the trees.', sheet: 'The sheet coordinate falls 1 m outside the surveyed enclosure.' },
           boundary: [[0.0,0.09], [8.52,0.0], [8.65,2.53], [10.34,2.47], [10.34,6.94], [0.0,7.03]],
           graves: [
             { n: 1, plan: { x: 2.16, z: 1.08, w: 0.22, d: 1.12 } },
@@ -75,6 +100,8 @@ window.ARCHIVE = {
         {
           id: 'D', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-D.png', at: [34.103046, 74.830503], span: 7,
           count: 1, lat: 34.102970, lng: 74.830365, coordsFrom: 'Grave 1',
+          survey: { area: 49, confidence: 'low', cover: 'trees 79% · bare earth 19%', near: 'Shrine 18 m',
+            setting: 'Small enclosure between Zones C and F, under tree cover.', sheet: 'The sheet coordinate falls about 16 m south-west, near Zone C.' },
           boundary: [[0.0,0.0], [7.37,0.0], [7.37,8.48], [0.0,8.48]],
           graves: [
             { n: 1, plan: { x: 2.23, z: 4.45, w: 0.97, d: 3.39 } }
@@ -83,8 +110,9 @@ window.ARCHIVE = {
         {
           id: 'E', source: 'the zone map on the Grave 2 sheet', map: 'zone-maps/imambargah-hassanabad/zone-E.png', at: [34.10326, 74.830474], span: 26,
           count: 15, lat: 34.103101, lng: 74.830395, coordsFrom: 'Grave 2',
-          boundary: [[1.97,0.0], [12.07,0.0], [12.07,5.0], [3.52,5.51], [3.52,7.4], [0.0,7.4], [0.0,4.46], [1.97,4.46]], features: [{ label: 'Tree enclosure', x: 6.88, z: 2.79, w: 3.2, d: 3.2 }],
-          graves: [
+          survey: { area: 947, confidence: 'medium', cover: 'trees 69% · hard ground 29%', near: 'Jamia Masjid, adjoining',
+            setting: 'Tree grove (chinar) along the east wall of the Jamia Masjid, bounded on the north-east by the curving lane.', sheet: 'The sheet coordinate falls about 8 m south of the grove.' },
+          boundary: [[1.97,0.0], [12.07,0.0], [12.07,5.0], [3.52,5.51], [3.52,7.4], [0.0,7.4], [0.0,4.46], [1.97,4.46]], features: [{ label: 'Tree enclosure', x: 6.88, z: 2.79, w: 3.2, d: 3.2 }],          graves: [
             { n: 1, plan: { x: 1.79, z: 5.95, w: 0.33, d: 0.67 } },
             { n: 2, plan: { x: 3.14, z: 4.39, w: 0.3, d: 0.63 } },
             { n: 3, plan: { x: 4.46, z: 4.43, w: 0.3, d: 0.56 } },
@@ -105,6 +133,8 @@ window.ARCHIVE = {
         {
           id: 'F', source: 'the zone map on the Grave 2 (Sheet 56) sheet', map: 'zone-maps/imambargah-hassanabad/zone-F.png', at: [34.103109, 74.830625], span: 11,
           count: 3, lat: 34.102778, lng: 74.830606, coordsFrom: 'Grave 2 (Sheet 56)',
+          survey: { area: 90, confidence: 'low', cover: 'trees 67% · hard ground 18% · bare earth 14%', near: 'Shrine 26 m · Jamia Masjid 29 m',
+            setting: 'Square enclosure at the north-east of the precinct, beside the curving lane.', sheet: 'The sheet coordinate falls about 36 m south, inside Zone G, so it is Zone G\'s; Zone F\'s own coordinate is still to be recorded.' },
           boundary: [[0.0,0.0], [4.95,0.0], [4.95,5.39], [0.0,5.39]],
           graves: [
             { n: 1, plan: { x: 0.86, z: 0.45, w: 0.52, d: 0.52 } },
@@ -115,6 +145,8 @@ window.ARCHIVE = {
         {
           id: 'G', source: 'the zone map on Sheet 61', map: 'zone-maps/imambargah-hassanabad/zone-G.png', at: [34.1028, 74.830623], span: 24, count: 7,
           lat: 34.102778, lng: 74.830606, coordsFrom: 'Grave 2 (Sheet 61)', coordsCheck: 'Same as Zone F on Sheet 56',
+          survey: { area: 976, confidence: 'medium', cover: 'grass 40% · trees 36% · bare earth 20%', near: 'Square shrine, adjoining',
+            setting: 'Enclosure east of the square shrine, walled on the south (the kinked wall on the zone map) and east; the paved walkway runs along its north side.', sheet: 'The sheet coordinate falls inside this zone, so it is right for G.' },
           north: 15,   // degrees clockwise from the top of the plan
           boundary: [[3.8, 0], [11.12, 0], [11.38, 8.12], [0, 8.32], [0.1, 5.05], [2.81, 4.98], [2.87, 5.64],
                      [3.73, 5.64], [3.73, 3.66], [3.3, 3.66], [3.3, 3], [3.8, 3]],
