@@ -17,6 +17,8 @@ window.MapKit = (function(){
     const roads = (id, cls, w0, w1, color) => ({ id, type: 'line', source: 'omt', 'source-layer': 'transportation',
       filter: ['in', ['get', 'class'], ['literal', cls]], layout: { 'line-cap': 'round', 'line-join': 'round' },
       paint: { 'line-color': color, 'line-width': ['interpolate', ['exponential', 1.6], ['zoom'], 9, w0, 18, w1, 22, w1 * 8] } });
+    // opts.places / opts.waters: show only these names (English or local), for a page that wants a quieter map
+    const named = list => list ? { filter: ['in', ['coalesce', ['get', 'name:en'], ['get', 'name']], ['literal', list]] } : {};
     return {
       version: 8,
       glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
@@ -45,11 +47,11 @@ window.MapKit = (function(){
                    'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 13, 0, 14.5, ['coalesce', ['get', 'render_height'], 6]],
                    'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
                    'fill-extrusion-opacity': o.buildingOpacity || .92, 'fill-extrusion-vertical-gradient': true } },
-        { id: 'water-names', type: 'symbol', source: 'omt', 'source-layer': 'water_name', minzoom: 10,
+        { id: 'water-names', type: 'symbol', source: 'omt', 'source-layer': 'water_name', minzoom: 10, ...named(o.waters),
           layout: { 'text-field': ['coalesce', ['get', 'name:en'], ['get', 'name']], 'text-font': ['Noto Sans Italic'], 'text-size': 11, 'text-letter-spacing': .12 },
           paint: { 'text-color': c.waterLine, 'text-halo-color': c.halo, 'text-halo-width': 1 } },
         { id: 'places', type: 'symbol', source: 'omt', 'source-layer': 'place',
-          filter: ['any', ['in', ['get', 'class'], ['literal', ['city', 'town']]],
+          filter: o.places ? named(o.places).filter : ['any', ['in', ['get', 'class'], ['literal', ['city', 'town']]],
                    ['all', ['in', ['get', 'class'], ['literal', ['suburb', 'village', 'neighbourhood']]], ['>=', ['zoom'], o.villagesFrom]]],
           layout: { 'text-field': ['upcase', ['coalesce', ['get', 'name:en'], ['get', 'name']]], 'text-font': ['Noto Sans Regular'],
                     'text-size': ['match', ['get', 'class'], 'city', 12, 10], 'text-letter-spacing': .22, 'text-max-width': 12 },
