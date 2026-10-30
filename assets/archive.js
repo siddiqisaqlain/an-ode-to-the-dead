@@ -35,7 +35,7 @@ window.ARCHIVE = {
         {
           /* at: moved 20 m toward Zone B (19.5 m E, 4.5 m S) from the key plan's [34.10302, 74.829712]; maximum push —
              1.2 m from Zone B, touching the Imambargah entrance on the south */
-          id: 'A', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-A.png', at: [34.10298, 74.829924], span: 22, north: 15,
+          id: 'A', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-A.png', at: [34.10298, 74.829924], span: 22, north: 15, view: { bearing: 160 },   // the Imambargah stands south of the zone: open on it from the north-west
           count: 1, lat: 34.102989, lng: 74.829878, coordsFrom: 'Grave 1',
           survey: { area: 698, confidence: 'medium', cover: 'bare earth 76% · hard ground 11% · trees 7% · grass 6%', near: 'Jamia Masjid 7 m · Imambargah 11 m',
             setting: 'Open graveyard plot between the lane west of the Jamia Masjid and the Masjid Sajadia houses, north of the path to the Imambargah.', sheet: 'The sheet coordinate falls inside the surveyed plot.' },

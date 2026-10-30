@@ -177,7 +177,7 @@ body.bloom-on .bloom{opacity:1;transform:scale(3.2);transition:opacity .3s ease-
 </aside>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-<script src="assets/archive.js?v=16"></script>
+<script src="assets/archive.js?v=17"></script>
 <script src="assets/map.js?v=8"></script>
 <script src="assets/nav.js?v=5"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -430,7 +430,8 @@ function focusZone(id){
   if (l) {
     showZone(l); showNums(l); prefetch(l);
     const b = new maplibregl.LngLatBounds(l.bounds[0], l.bounds[1]);
-    map.flyTo({ ...frame(b, { bearing: map.getBearing(), pitch: 58, max: 21.6, less: .15 }), duration: reduced ? 0 : 1300, curve: 1.3, essential: true });
+    const view = l.zone.view || {};   // a zone may name the side to see it from first, where a building would stand in the way
+    map.flyTo({ ...frame(b, { bearing: view.bearing ?? map.getBearing(), pitch: view.pitch || 58, max: 21.6, less: .15 }), duration: reduced ? 0 : (view.bearing != null ? 1800 : 1300), curve: 1.3, essential: true });
   } else {
     showZones(); showNums(null);
     map.flyTo({ ...frame(all, { bearing: map.getBearing(), pitch: 55, max: 20, less: .1 }), duration: reduced ? 0 : 1200, curve: 1.3, essential: true });
