@@ -79,7 +79,7 @@ window.MapKit = (function(){
     const kl = M * Math.cos(lat * Math.PI / 180), xs = b.map(p => p[0]);
     const k = zone.span ? zone.span / (Math.max(...xs) - Math.min(...xs)) : 1;   // the zone's measured ground extent, where known
     const at = (x, z) => { const dx = (x - ax) * k, dz = (z - az) * k, e = dx * cos + dz * sin, n = dx * sin - dz * cos; return [lng + e / kl, lat + n / M]; };
-    return { at, how };
+    return { at, how, k };
   }
   function rect(at, p, h){
     const r = (p.rot || 0) * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
@@ -89,9 +89,19 @@ window.MapKit = (function(){
     });
     return pts;
   }
+  /* a tree as extrusions: the trunk, then the crown as stacked rings that swell and close like a chinar's dome.
+     CROWN: [base, top, radius] as fractions of the tree's height and crown radius */
+  const CROWN = [[.26, .34, .72], [.34, .46, .92], [.46, .64, 1], [.64, .78, .9], [.78, .9, .68], [.9, 1, .38]];
+  function treeParts(centre, t, zone){
+    const [lng, lat] = centre, kl = M * Math.cos(lat * Math.PI / 180);
+    const ring = r => { const pts = []; for (let i = 0; i <= 24; i++) { const a = i / 24 * 2 * Math.PI; pts.push([lng + r * Math.cos(a) / kl, lat + r * Math.sin(a) / M]); } return [pts]; };
+    const part = (kind, r, base, top) => ({ type: 'Feature', properties: { zone, part: kind, base, top, name: t.name || 'Tree' }, geometry: { type: 'Polygon', coordinates: ring(r) } });
+    const h = t.height || 15, R = (t.crown || 10) / 2;
+    return [part('trunk', (t.trunk || .8) / 2, 0, h * CROWN[1][0])].concat(CROWN.map(([b, tp, k]) => part('crown', R * k, h * b, h * tp)));
+  }
   function geo(site){
     const free = site.zones.filter(z => !z.at && !(z.lat && /Grave \d+/.test(z.coordsFrom || '')));
-    const zones = [], graves = [], labels = [];
+    const zones = [], graves = [], labels = [], trees = [];
     let gid = 0;
     site.zones.forEach((z, i) => {
       const f = framer(site, z, free.indexOf(z), free.length);
@@ -99,7 +109,8 @@ window.MapKit = (function(){
       zones.push({ type: 'Feature', id: i, properties: { zone: z.id, template: !!z.template, how: f.how }, geometry: { type: 'Polygon', coordinates: [ring] } });
       const lngs = ring.map(p => p[0]), lats = ring.map(p => p[1]);
       const bounds = [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]];
-      labels.push({ zone: z, i, how: f.how, centre: [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2], bounds, graves: [] });
+      labels.push({ zone: z, i, how: f.how, centre: [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2], bounds, graves: [],
+                    at: f.at, k: f.k });   // the zone's plan-to-map transform, for things drawn against its plan
       z.graves.forEach(g => {
         if (!g.plan) return;
         const rec = Archive.hasRecord(g), h = g.kind === 'headstone' ? (g.height || .7) : .55;
@@ -107,8 +118,10 @@ window.MapKit = (function(){
           geometry: { type: 'Polygon', coordinates: [rect(f.at, g.plan)] } });
         labels[i].graves.push({ n: g.n, rec, at: f.at(g.plan.x, g.plan.z), id: gid, h });
       });
+      labels[i].trees = (z.trees || []).map(t => { const at = f.at(t.x, t.z); trees.push(...treeParts(at, t, z.id)); return Object.assign({ at }, t); });
     });
-    return { zones: { type: 'FeatureCollection', features: zones }, graves: { type: 'FeatureCollection', features: graves }, labels };
+    return { zones: { type: 'FeatureCollection', features: zones }, graves: { type: 'FeatureCollection', features: graves },
+             trees: { type: 'FeatureCollection', features: trees }, labels };
   }
 
   /* the camera both pages agree on when you enter a site: the front page flies to it, the site page opens on it */
