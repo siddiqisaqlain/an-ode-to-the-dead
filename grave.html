@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://cdnjs.cloudflare.com">
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
-<script src="assets/archive.js?v=14"></script>
+<script src="assets/archive.js?v=16"></script>
 <script>/* start fetching this grave's scan before the page's scripts arrive */
 (function(){ var P=Archive.params(), s=Archive.site(P.site), z=Archive.zone(s,P.zone), g=Archive.grave(z,P.grave);
   Archive.scanFiles(s,z,g).forEach(function(f){ var l=document.createElement('link'); l.rel='preload'; l.href=f.url; l.as='fetch'; l.crossOrigin='anonymous';   /* three.js fetches the texture too (as an ImageBitmap), so it matches */ document.head.appendChild(l); }); })();</script>

@@ -35,7 +35,7 @@ window.ARCHIVE = {
         {
           /* at: moved 20 m toward Zone B (19.5 m E, 4.5 m S) from the key plan's [34.10302, 74.829712]; maximum push —
              1.2 m from Zone B, touching the Imambargah entrance on the south */
-          id: 'A', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-A.png', at: [34.10298, 74.829924], span: 22,
+          id: 'A', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-A.png', at: [34.10298, 74.829924], span: 22, north: 15,
           count: 1, lat: 34.102989, lng: 74.829878, coordsFrom: 'Grave 1',
           survey: { area: 698, confidence: 'medium', cover: 'bare earth 76% · hard ground 11% · trees 7% · grass 6%', near: 'Jamia Masjid 7 m · Imambargah 11 m',
             setting: 'Open graveyard plot between the lane west of the Jamia Masjid and the Masjid Sajadia houses, north of the path to the Imambargah.', sheet: 'The sheet coordinate falls inside the surveyed plot.' },
@@ -45,7 +45,7 @@ window.ARCHIVE = {
           ]
         },
         {
-          id: 'B', source: 'the zone map on the Grave 2 sheet', map: 'zone-maps/imambargah-hassanabad/zone-B.png', at: [34.10293, 74.830186], span: 24,
+          id: 'B', source: 'the zone map on the Grave 2 sheet', map: 'zone-maps/imambargah-hassanabad/zone-B.png', at: [34.10293, 74.830186], span: 24, north: 15,
           count: 11, lat: 34.102911, lng: 74.830243, coordsFrom: 'Grave 2',
           survey: { area: 256, confidence: 'medium', cover: 'trees 48% · bare earth 26% · hard ground 13% · building 12%', near: 'Grey-roofed building, adjoining · Imambargah 2 m',
             setting: 'Below the grey-roofed building north of the Imambargah, edged on the south-west by the curved earth path (the curve on the zone map).', sheet: 'The sheet coordinate falls inside the surveyed area.' },
@@ -68,7 +68,7 @@ window.ARCHIVE = {
           ]
         },
         {
-          id: 'C', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-C.png', at: [34.102974, 74.830383], span: 18,
+          id: 'C', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-C.png', at: [34.102974, 74.830383], span: 18, north: 15,
           count: 21, lat: 34.102952, lng: 74.830341, coordsFrom: 'Grave 1',
           survey: { area: 162, confidence: 'low', cover: 'bare earth 41% · grass 41% · trees 18%', near: 'Grey-roofed building 6 m · shrine 11 m',
             setting: 'Walled enclosure south of the tree grove (Zone E) and north of the paved walkway; its walls are hard to read under the trees.', sheet: 'The sheet coordinate falls 1 m outside the surveyed enclosure.' },
@@ -98,7 +98,7 @@ window.ARCHIVE = {
           ]
         },
         {
-          id: 'D', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-D.png', at: [34.103046, 74.830503], span: 7,
+          id: 'D', source: 'the zone map on the Grave 1 sheet', map: 'zone-maps/imambargah-hassanabad/zone-D.png', at: [34.103046, 74.830503], span: 7, north: 15,
           count: 1, lat: 34.102970, lng: 74.830365, coordsFrom: 'Grave 1',
           survey: { area: 49, confidence: 'low', cover: 'trees 79% · bare earth 19%', near: 'Shrine 18 m',
             setting: 'Small enclosure between Zones C and F, under tree cover.', sheet: 'The sheet coordinate falls about 16 m south-west, near Zone C.' },
@@ -108,7 +108,7 @@ window.ARCHIVE = {
           ]
         },
         {
-          id: 'E', source: 'the zone map on the Grave 2 sheet', map: 'zone-maps/imambargah-hassanabad/zone-E.png', at: [34.10326, 74.830474], span: 26,
+          id: 'E', source: 'the zone map on the Grave 2 sheet', map: 'zone-maps/imambargah-hassanabad/zone-E.png', at: [34.10326, 74.830474], span: 26, north: 15,
           count: 15, lat: 34.103101, lng: 74.830395, coordsFrom: 'Grave 2',
           survey: { area: 947, confidence: 'medium', cover: 'trees 69% · hard ground 29%', near: 'Jamia Masjid, adjoining',
             setting: 'Tree grove (chinar) along the east wall of the Jamia Masjid, bounded on the north-east by the curving lane.', sheet: 'The sheet coordinate falls about 8 m south of the grove.' },
@@ -131,7 +131,7 @@ window.ARCHIVE = {
           ]
         },
         {
-          id: 'F', source: 'the zone map on the Grave 2 (Sheet 56) sheet', map: 'zone-maps/imambargah-hassanabad/zone-F.png', at: [34.103109, 74.830625], span: 11,
+          id: 'F', source: 'the zone map on the Grave 2 (Sheet 56) sheet', map: 'zone-maps/imambargah-hassanabad/zone-F.png', at: [34.103109, 74.830625], span: 11, north: 15,
           count: 3, lat: 34.102778, lng: 74.830606, coordsFrom: 'Grave 2 (Sheet 56)',
           survey: { area: 90, confidence: 'low', cover: 'trees 67% · hard ground 18% · bare earth 14%', near: 'Shrine 26 m · Jamia Masjid 29 m',
             setting: 'Square enclosure at the north-east of the precinct, beside the curving lane.', sheet: 'The sheet coordinate falls about 36 m south, inside Zone G, so it is Zone G\'s; Zone F\'s own coordinate is still to be recorded.' },
@@ -147,7 +147,7 @@ window.ARCHIVE = {
           lat: 34.102778, lng: 74.830606, coordsFrom: 'Grave 2 (Sheet 61)', coordsCheck: 'Same as Zone F on Sheet 56',
           survey: { area: 976, confidence: 'medium', cover: 'grass 40% · trees 36% · bare earth 20%', near: 'Square shrine, adjoining',
             setting: 'Enclosure east of the square shrine, walled on the south (the kinked wall on the zone map) and east; the paved walkway runs along its north side.', sheet: 'The sheet coordinate falls inside this zone, so it is right for G.' },
-          north: 15,   // degrees clockwise from the top of the plan
+          north: 15,   // degrees clockwise from the top of the plan; every Hassanabad zone shares this site north
           boundary: [[3.8, 0], [11.12, 0], [11.38, 8.12], [0, 8.32], [0.1, 5.05], [2.81, 4.98], [2.87, 5.64],
                      [3.73, 5.64], [3.73, 3.66], [3.3, 3.66], [3.3, 3], [3.8, 3]],
           graves: [
