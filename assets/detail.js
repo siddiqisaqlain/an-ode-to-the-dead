@@ -3,8 +3,8 @@
    site (Google Earth, October 2026). The imagery is only the reference; nothing from it is embedded. Positions are in
    key-plan pixels and converted with the plan's georeference, so they share the zones' placement. Heights are estimates.
    Where a site has a 3D model (model: a .glb built in Blender from this same tracing, with real roof forms and textures),
-   the model replaces the extruded blocks inside its area and is drawn with three.js; elsewhere, and if three.js is
-   missing, the blocks stay. Needs MapLibre GL (and three.js r128 with GLTFLoader for the model). */
+   the model replaces the extruded blocks and is drawn with three.js, and the basemap's plain buildings give way close in;
+   if three.js is missing, the blocks stay. Needs MapLibre GL (and three.js r128 with GLTFLoader for the model). */
 window.SiteDetail = (function(){
   const M = 111320;
   /* a stepped roof: n tiers from scale s0 at height h0 to scale s1 at height h1, so a hipped or pyramidal roof reads in the massing */
@@ -16,7 +16,7 @@ window.SiteDetail = (function(){
       ref: { lat: 34.102826, lng: 74.830186, px: [810, 540], mpp: .17 },
       /* model: metres east/north of ref, x east, y up, z south; box = the area it covers [west, east, south, north] in metres.
          Textures: Poly Haven (CC0). Each vertex's second UV is where it meets the ground (east, 1 - north). */
-      model: { url: 'assets/models/imambargah-hassanabad.glb', box: [-95, 125, -100, 100] },
+      model: { url: 'assets/models/imambargah-hassanabad.glb', box: [-95, 125, -100, 100] },   // box: for reference
       ground: [
         { kind: 'earth', pts: [[450,330],[600,345],[660,355],[720,345],[860,295],[1000,240],[1080,300],[1110,420],[1185,600],[1185,655],[880,705],[850,560],[820,520],[720,480],[560,520],[470,500]] },
         { kind: 'field', pts: [[875,705],[1185,655],[1185,598],[1330,590],[1345,700],[1350,900],[1290,902],[1090,905],[1090,965],[870,960],[850,800]] },
@@ -99,7 +99,6 @@ window.SiteDetail = (function(){
 
   function build(d, k, use3d){
     const { ref } = d, kl = M * Math.cos(ref.lat * Math.PI / 180);
-    const box = use3d && d.model.box, inBox = (e, n) => box && e >= box[0] && e <= box[1] && n >= box[2] && n <= box[3];
     const ll = ([x, y]) => [ref.lng + (x - ref.px[0]) * ref.mpp / kl, ref.lat - (y - ref.px[1]) * ref.mpp / M];
     const poly = (pts, props) => ({ type: 'Feature', properties: props, geometry: { type: 'Polygon', coordinates: [pts.concat([pts[0]]).map(ll)] } });
     const rect = (c, w, dd, turn) => {
@@ -142,8 +141,7 @@ window.SiteDetail = (function(){
     /* the neighbourhood: indicative houses (assets/detail-houses.js), plastered walls under a stepped tin roof, gabled
        (narrowing across the depth only) or hipped (narrowing both ways) */
     const houses = [];
-    ((window.SiteDetailHouses || {})[d.id] || []).forEach(([e, n, w, dd, turn, h, roof, hip], i) => {
-      if (inBox(e, n)) return;   // the model has the real houses here
+    if (!use3d) ((window.SiteDetailHouses || {})[d.id] || []).forEach(([e, n, w, dd, turn, h, roof, hip], i) => {   // the model has the real houses
       const c = [ref.px[0] + e / ref.mpp, ref.px[1] - n / ref.mpp];
       houses.push(poly(rect(c, px(w), px(dd), turn), { base: 0, top: h, color: k.walls[i % 3] }));
       steps(1.04, .14, h, h + 2.8, 4).forEach(([sc, b, t]) => houses.push(poly(rect(c, px(w * (hip ? Math.max(sc, .45) : 1.04)), px(dd * sc), turn), { base: b, top: t, color: k.roofs[roof] })));
@@ -247,7 +245,11 @@ window.SiteDetail = (function(){
     map.addLayer({ id: 'detail-canopy', type: 'fill-extrusion', source: 'detail-canopy', minzoom: 14.5,
       paint: { 'fill-extrusion-color': ['get', 'color'], 'fill-extrusion-height': rise(['get', 'top']), 'fill-extrusion-base': rise(['get', 'base']),
                'fill-extrusion-opacity': .62, 'fill-extrusion-vertical-gradient': true } });
-    if (use3d) map.addLayer(modelLayer(map, d, c.dark), below);
+    if (use3d) {
+      map.addLayer(modelLayer(map, d, c.dark), below);
+      // close in, only the textured model shows: the plain basemap blocks give way where the model rises
+      if (below) map.setLayerZoomRange('buildings', map.getLayer('buildings').minzoom || 0, 15);
+    }
     map.addLayer({ id: 'detail-labels', type: 'symbol', source: 'detail-labels', minzoom: 16.5,
       layout: { 'text-field': ['upcase', ['get', 'name']], 'text-font': ['case', ['get', 'water'], ['literal', ['Noto Sans Italic']], ['literal', ['Noto Sans Regular']]],
                 'text-size': 10, 'text-letter-spacing': .2, 'text-offset': [0, -1.2], 'text-allow-overlap': false },
