@@ -8,6 +8,7 @@ The site follows the project's folder structure: **site → zone → grave**.
 1. `index.html`: the three sites (Imambargah, Hassanabad · Madeen Sahab · Anderkote, Sumbal).
 2. `site.html?site=…&zone=…`: zone tabs. Each zone shows a 3D map built from its zone plan, with its graves numbered in plan order and a list beside the map.
 3. `grave.html?site=…&zone=…&grave=…`: one grave. It shows the 3D scan if there is one, or a default model sized from the zone plan. It has the measured sheet, photographs placed where they were taken, a guided tour, and a **Files** drawer with the grave's five folders: CAD drawing, PDFs (final + revisions), photos, sketches, photographer's photos.
+4. `context.html`: about the archive. The project and its funder, the Barakat Trust; the method; an inventory of every site and zone; a typology of grave outlines read from the zone plans; the measured sheet's conventions with Sheet 61 as the worked example; and field notes on what is still to confirm. Each site page links to its own typology.
 
 **Test record:** Grave 2, Zone G, Imambargah, Hassanabad. Measured drawing: Sheet 61 (1:10). Each zone's 3D map is traced from its zone map in `zone-maps/`. The maps carry no scale, so sizes are approximate.
 
@@ -23,7 +24,9 @@ Zones fill in over time:
 
 ## Files
 - `assets/archive.js`: the data (sites, zones, graves, files, photo poses, tours)
+- `assets/context.js`: the about page's data (funder, method, outline types, Sheet 61 conventions, field notes), from the project's own records; counts are worked out from `archive.js`
 - `assets/models.js`: the default 3D grave
+- `assets/weather.js`: live weather over the front page's map, Srinagar's current conditions from [Open-Meteo](https://open-meteo.com/) (no key; nothing about the visitor is sent), refreshed every 15 minutes. Preview a condition with `?weather=clear|cloudy|fog|drizzle|rain|snow|storm` and `&night=1`
 - `assets/site.css`: shared styles
 - `assets/nav.js`: the top bar (segmented trail, slide back)
 

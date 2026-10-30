@@ -76,6 +76,10 @@ body.landed .index li:nth-child(2){transition-delay:.12s} body.landed .index li:
 .card.on{background:var(--glass-strong)}
 .card.on .go{display:flex}
 .card.on .go i::after{width:100%}
+.links{display:flex;flex-wrap:wrap;gap:8px;margin:-14px 0 0}
+.links .cbtn{height:38px;font-size:13.5px;padding:0 14px;box-shadow:none}
+.links .funder{gap:6px}
+.links small{font-size:11px;font-weight:500;color:var(--label2)}
 .foot{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink2);margin:0}
 .foot a{color:var(--tint);text-decoration:none}
 .foot a:hover{text-decoration:underline}
@@ -103,7 +107,59 @@ body.ready .hud{opacity:1}
 .tblock div:nth-child(odd){border-right:.5px solid var(--rule)}
 .tblock div:nth-last-child(-n+2){border-bottom:0}
 .tblock b{display:block;font-weight:500;color:var(--ink);font-size:11.5px;letter-spacing:.02em;text-transform:none;font-variant-numeric:tabular-nums;white-space:nowrap}
-  opacity:0;pointer-events:none;transform:translateY(-8px);transition:opacity .4s var(--ease),transform .4s var(--ease)}
+
+/* live weather over the valley (assets/weather.js): rain and snow, stars and the moon on a canvas; cloud, fog, haze, sun and
+   night as layers. It sits above the map and below everything else, and never takes a click */
+.wx{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden;
+  --mist:236,235,230; --mist-a:1; --shade:58,64,78; --shade-a:.7}
+/* on the dark map, mist is pale grey and cloud is lighter than the ground, so both still read */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .wx{--mist:150,160,176; --mist-a:.75; --shade:160,170,190; --shade-a:.62}}
+:root[data-theme="dark"] .wx{--mist:150,160,176; --mist-a:.75; --shade:160,170,190; --shade-a:.62}
+.wx canvas{position:absolute;inset:0}
+.wx > div{position:absolute;inset:0;opacity:0;transition:opacity 2.4s var(--ease)}
+/* night: a blue dusk over the map, thinned by moonlight (--moon is the lit fraction of a risen moon) */
+.wx-tint{background:radial-gradient(ellipse 120% 90% at 60% 0%,rgba(46,66,120,.42),rgba(12,20,48,.62));mix-blend-mode:multiply}
+.wx[data-day="night"] .wx-tint{opacity:calc(1 - var(--moon,0) * .4)}
+.wx[data-wx="rain"] .wx-tint,.wx[data-wx="storm"] .wx-tint{opacity:.45}
+.wx[data-day="night"][data-wx="rain"] .wx-tint,.wx[data-day="night"][data-wx="storm"] .wx-tint{opacity:1}
+/* day: a warm glow where the sun stands (--sx, --sy), more amber when it is low (--warm) */
+.wx-sun{background:radial-gradient(circle at var(--sx,85%) var(--sy,8%),rgba(255,214,140,.6),rgba(255,190,110,calc(.16 + var(--warm,0) * .2)) 28%,rgba(255,170,90,0) 58%);
+  mix-blend-mode:soft-light;animation:wxsun 9s ease-in-out infinite}
+.wx[data-day="day"][data-wx="clear"] .wx-sun{opacity:1}
+.wx[data-day="day"][data-wx="cloudy"] .wx-sun{opacity:.4}
+@keyframes wxsun{50%{transform:scale(1.06)}}
+/* cloud shade, drifting with the wind (--drift); its depth follows the cloud cover (--cloud) */
+.wx .wx-clouds{opacity:calc(var(--cloud,0) * .85)}
+.wx-clouds i,.wx-fog i{position:absolute;border-radius:50%;animation:wxdrift var(--drift,30s) linear infinite;will-change:transform}
+.wx-clouds i{top:-20%;width:70vmax;height:46vmax;background:radial-gradient(closest-side,rgba(var(--shade),var(--shade-a)),rgba(var(--shade),0))}
+.wx-clouds i:nth-child(1){left:-30%;animation-delay:calc(var(--drift,30s) * -.15)}
+.wx-clouds i:nth-child(2){left:10%;top:22%;width:60vmax;animation-delay:calc(var(--drift,30s) * -.45)}
+.wx-clouds i:nth-child(3){left:-10%;top:52%;width:80vmax;animation-delay:calc(var(--drift,30s) * -.7)}
+.wx-clouds i:nth-child(4){left:20%;top:8%;width:55vmax;height:34vmax;animation-delay:calc(var(--drift,30s) * -.92)}
+@keyframes wxdrift{from{transform:translateX(-45vw)}to{transform:translateX(145vw)}}
+/* fog: low banks rolling slowly across, over an even haze */
+.wx-fog i{width:90vmax;height:30vmax;background:radial-gradient(closest-side,rgba(var(--mist),calc(var(--mist-a) * .85)),rgba(var(--mist),0));
+  animation-duration:calc(var(--drift,30s) * 1.6)}
+.wx-fog i:nth-child(1){top:20%;left:-40%;animation-delay:calc(var(--drift,30s) * -.3)}
+.wx-fog i:nth-child(2){top:45%;left:-20%;animation-delay:calc(var(--drift,30s) * -.9)}
+.wx-fog i:nth-child(3){top:68%;left:-50%;animation-delay:calc(var(--drift,30s) * -1.4)}
+.wx[data-wx="fog"] .wx-fog{opacity:1}
+.wx-haze{background:linear-gradient(180deg,rgba(var(--mist),calc(var(--mist-a) * .3)),rgba(var(--mist),calc(var(--mist-a) * .7)))}
+.wx[data-wx="fog"] .wx-haze{opacity:.7}
+.wx[data-wx="rain"] .wx-haze,.wx[data-wx="storm"] .wx-haze,.wx[data-wx="snow"] .wx-haze{opacity:.5}
+.wx[data-wx="drizzle"] .wx-haze{opacity:.35}
+.wx[data-wx="snow"] .wx-haze{background:linear-gradient(180deg,rgba(255,255,255,.25),rgba(240,244,248,.5))}
+.wx-flash{background:#fff;transition:none!important}
+.wx.flash .wx-flash{opacity:.7}
+/* the reading: place, temperature and conditions, and at night the moon, beside the title block */
+.wxr{display:flex;align-items:center;gap:10px;padding:8px 14px 8px 10px;border-radius:12px;pointer-events:auto;cursor:default;min-height:44px}
+.wxr:empty{display:none}
+.wxr .wx-ico{display:grid;place-items:center;width:28px;height:28px;color:var(--mark)}
+.wxr .wx-ico svg{width:24px;height:24px}
+.wxr small{display:block;font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2)}
+.wxr b{display:block;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.wxr em{display:block;font-style:normal;font-size:11.5px;color:var(--ink2);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){ .wx-clouds i,.wx-fog i,.wx-sun{animation:none} .wx > div{transition:none} }
 
 /* map controls and attribution, quietened */
 .maplibregl-ctrl-scale{background:transparent;border-color:var(--ink2);color:var(--ink2);font-family:var(--f-mono);font-size:10px;letter-spacing:.04em}
@@ -128,6 +184,7 @@ body.nomap .index li,body.nomap .reveal{opacity:1;transform:none;filter:none}
   .card:hover{transform:none}
   .hud{top:max(28px,calc(env(safe-area-inset-top,0px) + 20px));bottom:auto;right:20px}
   .tblock,.maplibregl-ctrl-scale{display:none}
+  .wxr{padding:6px 10px 6px 6px;min-height:40px} .wxr small,.wxr em{display:none}
   .maplibregl-ctrl-bottom-right{bottom:auto;top:96px;right:20px}
 }
 @media (prefers-reduced-motion:reduce){
@@ -137,6 +194,7 @@ body.nomap .index li,body.nomap .reveal{opacity:1;transform:none;filter:none}
 </head>
 <body>
 <div id="map" aria-label="3D map of the Kashmir valley showing the three graveyards"></div>
+<div id="wx" aria-hidden="true"></div>
 <div class="fade"></div>
 <div class="veil"></div>
 <div class="frame" aria-hidden="true"></div>
@@ -148,21 +206,25 @@ body.nomap .index li,body.nomap .reveal{opacity:1;transform:none;filter:none}
     <p class="lede reveal d2" id="lede"></p>
   </header>
   <ol class="index" id="index" aria-label="The three graveyards"></ol>
+  <p class="links reveal d3"><a class="cbtn glass" href="context.html">About the archive: inventory, typology, records →</a><a class="cbtn glass funder" href="https://www.barakat.org/" target="_blank" rel="noopener"><small>Funded by</small>The Barakat Trust</a></p>
   <p class="foot reveal d3"><a href="grave.html?site=imambargah-hassanabad&amp;zone=G&amp;grave=2">Test record: Grave 2, Zone G →</a><span>© 2026 Saqlain Siddiqi. All rights reserved.</span></p>
 </section>
 
 
-<div class="hud" aria-hidden="true">
-  <div class="tblock glass">
+<div class="hud">
+  <div class="wxr glass" id="wxr" role="status" aria-live="polite"></div>
+  <div class="tblock glass" aria-hidden="true">
     <div>Drawing<b>Site key plan</b></div><div>Sites<b>3</b></div>
     <div>Centre<b id="tbCoord">–</b></div><div>View<b id="tbPitch">Plan</b></div>
+    <div>Funded by<b>The Barakat Trust</b></div><div>Institution<b>IUST, Awantipora</b></div>
   </div>
-  <div class="north glass"><svg id="needle" viewBox="0 0 34 34"><path d="M17 4 21.5 17h-9Z" fill="var(--ink)"/><path d="M17 30 21.5 17h-9Z" fill="none" stroke="var(--ink)" stroke-width="1"/></svg></div>
+  <div class="north glass" aria-hidden="true"><svg id="needle" viewBox="0 0 34 34"><path d="M17 4 21.5 17h-9Z" fill="var(--ink)"/><path d="M17 30 21.5 17h-9Z" fill="none" stroke="var(--ink)" stroke-width="1"/></svg></div>
 </div>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 <script src="assets/archive.js?v=6"></script>
 <script src="assets/map.js?v=5"></script>
+<script src="assets/weather.js?v=10"></script>
 <script>
 (function(){
 const $ = id => document.getElementById(id);
@@ -188,15 +250,22 @@ $('index').innerHTML = sites.map((s, i) => {
 }).join('');
 const cards = [...document.querySelectorAll('.card')];
 
+/* ---------- live weather: Srinagar, where two of the three graveyards lie (assets/weather.js) ---------- */
+function startWeather(m){ try { Weather.start({ lat: 34.0837, lng: 74.7973, place: 'Srinagar', layer: $('wx'), readout: $('wxr'), map: m,
+  spots: m ? ARCHIVE.sites.filter(s => s.lat).map(s => ({ lng: s.lng, lat: s.lat })) : [] }); } catch (_) {} }
+/* moonlight follows the visitor: the site under the pointer, else the one chosen, else all three */
+const moonOn = i => { if (window.Weather && Weather.current && Weather.current.focus) Weather.current.focus(i); };
+
 /* ---------- the map: the valley as a massing model (assets/map.js) ---------- */
 const palette = MapKit.palette, style = MapKit.style;
 const VALLEY = { center: [74.74, 34.16], zoom: 8.3, pitch: 0, bearing: 0 };
 let map;
 try {
-  map = new maplibregl.Map({ container: 'map', style: style(palette()), ...VALLEY, maxPitch: 75, attributionControl: { compact: true },
+  map = new maplibregl.Map({ container: 'map', style: style(palette()), ...VALLEY, maxPitch: 85, attributionControl: { compact: true },
     canvasContextAttributes: { antialias: true } });
-} catch (e) { document.body.classList.add('nomap', 'ready', 'landed'); return; }
+} catch (e) { document.body.classList.add('nomap', 'ready', 'landed'); startWeather(); return; }
 map.addControl(new maplibregl.ScaleControl({ maxWidth: 110, unit: 'metric' }), 'bottom-right');
+startWeather(map);
 const failTimer = setTimeout(() => { if (!map.loaded()) document.body.classList.add('nomap', 'ready', 'landed'); }, 12000);
 
 /* site highlights: a soft disc on the ground at each site, with a ring breathing outward */
@@ -230,7 +299,7 @@ const markers = sites.map((s, i) => {
   el.addEventListener('mouseenter', () => hot(i)); el.addEventListener('mouseleave', () => hot(null));
   return new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([s.lng, s.lat]).addTo(map);
 });
-function hot(i){ markers.forEach((m, j) => m.getElement().classList.toggle('hot', j === i)); }
+function hot(i){ markers.forEach((m, j) => m.getElement().classList.toggle('hot', j === i)); moonOn(i != null ? i : focused >= 0 ? focused : null); }
 
 /* camera: the overview frames the three sites; focusing flies low over one */
 function overview(){
@@ -244,7 +313,7 @@ let focused = -1;
 const ENTER_MS = 2200;
 function focus(i){
   if (focused === i) return;
-  focused = i; stopOrbit();
+  focused = i; stopOrbit(); moonOn(i);
   cards.forEach((c, j) => c.classList.toggle('on', j === i));
   markers.forEach((m, j) => m.getElement().classList.toggle('dim', j !== i));
   const s = sites[i], url = Archive.siteURL(s), ms = reduced ? 0 : ENTER_MS;
@@ -255,7 +324,7 @@ function focus(i){
   map.once('moveend', () => { if (focused === i) location.href = url; });
 }
 function showAll(){
-  focused = -1; cards.forEach(c => c.classList.remove('on')); markers.forEach(m => m.getElement().classList.remove('dim'));
+  focused = -1; moonOn(null); cards.forEach(c => c.classList.remove('on')); markers.forEach(m => m.getElement().classList.remove('dim'));
   document.body.classList.remove('focused');
   map.flyTo({ ...overview(), duration: reduced ? 0 : 2800, curve: 1.3, essential: true });
   map.once('moveend', () => setTimeout(startOrbit, 600));

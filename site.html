@@ -88,6 +88,13 @@ body.ready .panel{transform:none}
 .refmap img{display:block;width:100%;background:#fff}
 .note{flex:none;margin:auto 16px 16px;font-size:12px;line-height:1.45;color:var(--label2)}
 .note b{color:var(--label);font-weight:600}
+.nearby{flex:none;display:flex;align-items:center;gap:12px;margin:0 16px 16px;padding:12px 14px;border-radius:14px;background:var(--fill);text-decoration:none;color:var(--label)}
+.nearby:hover{background:var(--fill2)}
+.nearby .t{display:flex;flex-direction:column;min-width:0;margin-right:auto}
+.nearby small{font-size:11px;font-family:var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--label2)}
+.nearby b{font-weight:500;font-size:15px}
+.nearby span span{font-size:13px;color:var(--label2)}
+.note{margin-bottom:10px}
 
 /* bottom: zone switcher */
 .tabs{position:fixed;z-index:5;left:calc((100% - 384px) / 2);bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;
@@ -160,10 +167,12 @@ body.bloom-on .bloom{opacity:1;transform:scale(3.2);transition:opacity .3s ease-
   <details class="refmap" id="refmap" hidden><summary>Zone map, as drawn</summary><img id="refimg" alt="" loading="lazy"></details>
   <ol class="list" id="list"></ol>
   <p class="note" id="note"></p>
+  <a class="nearby" id="nearby" href="context.html"></a>
 </aside>
 
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 <script src="assets/archive.js?v=6"></script>
+<script src="assets/context.js?v=5"></script>
 <script src="assets/map.js?v=5"></script>
 <script src="assets/nav.js?v=5"></script>
 <script>
@@ -175,6 +184,12 @@ if (P.theme === 'light' || P.theme === 'dark') document.documentElement.dataset.
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches, mobile = () => innerWidth <= 760;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const chev = '<svg class="chev" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m1 1 6 6-6 6"/></svg>';
+/* this site's graves by outline type, linking to the typology on the about page */
+const ty = CONTEXT.typesFor(site), typed = Object.values(ty).reduce((a, b) => a + b, 0);
+$('nearby').innerHTML = typed
+  ? `<span class="t"><small>Typology</small><b>Grave outlines at this site</b><span>${CONTEXT.types.map(t => `${ty[t.id]} ${t.name.toLowerCase()}`).join(' · ')}</span></span>${chev}`
+  : `<span class="t"><small>About the archive</small><b>Inventory and records</b><span>Zone plans for this site are still to come</span></span>${chev}`;
+$('nearby').href = typed ? 'context.html#typology' : 'context.html#inventory';
 const G = MapKit.geo(site), L = G.labels, total = L.reduce((a, l) => a + l.graves.length, 0);
 
 document.title = site.name + ' · Zones';
@@ -381,6 +396,19 @@ map.on('click', e => {
 map.on('move', () => { $('needle').style.transform = `rotate(${-map.getBearing()}deg)`; });
 addEventListener('keydown', e => { if (e.key === 'Escape' && current) focusZone(''); });
 
+/* a slow drift around the view, as on the front page, while nobody is steering: it holds still during the camera's own flights
+   and the dive into a grave, and after a drag, pinch or scroll it waits a few quiet seconds before turning again */
+let drifting = false, lastT = 0, idleT = 0;
+function drift(now){
+  if (!drifting) return;
+  const dt = Math.min(now - lastT, 64); lastT = now;
+  if (!leaving && !document.hidden && !map.isEasing()) map.setBearing(map.getBearing() + dt * .0016);
+  requestAnimationFrame(drift);
+}
+function startDrift(){ if (reduced || drifting) return; drifting = true; lastT = performance.now(); requestAnimationFrame(drift); }
+function pauseDrift(){ drifting = false; clearTimeout(idleT); idleT = setTimeout(startDrift, 6000); }
+['mousedown', 'touchstart', 'wheel'].forEach(t => map.getCanvas().addEventListener(t, pauseDrift, { passive: true }));
+
 /* the entry: a quick descent from the front page's view onto the site, then the zones light up */
 showZones();
 map.on('load', () => {
@@ -392,12 +420,13 @@ map.on('load', () => {
   let from = null; try { from = JSON.parse(sessionStorage.getItem('ode:return') || 'null'); sessionStorage.removeItem('ode:return'); } catch (e) {}
   const sl = start && L.find(x => x.zone === start), back = from && sl && from.zone === start.id && Date.now() - from.t < 15000 && sl.graves.find(x => x.n === from.grave);
   if (back) {   // came back from that grave: start where the dive ended and rise out to the zone
-    map.jumpTo(closeUp(back.at, bearing + 40)); document.body.classList.add('landed'); focusZone(start.id); return;
+    map.jumpTo(closeUp(back.at, bearing + 40)); document.body.classList.add('landed'); focusZone(start.id); setTimeout(startDrift, 2500); return;
   }
   map.flyTo({ ...frame(all, { bearing, pitch: 55, max: 20, less: .1 }), duration: reduced ? 0 : 1600, curve: 1.2, essential: true });
   map.once('moveend', () => {
     document.body.classList.add('landed'); const go = pending !== null ? pending : start && start.id;
     if (go) setTimeout(() => focusZone(go), reduced ? 0 : 250);
+    setTimeout(startDrift, 1500);
   });
 });
 })();
